@@ -26,12 +26,12 @@ export default class School extends Model<School | ISchool> {
         allowNull: false,
     })
         location: {
-        address: string;
-        city: string;
-        state: string;
-        country: string;
-        postalCode: string;
-    };
+            address: string;
+            city: string;
+            state: string;
+            country: string;
+            postalCode: string;
+        };
 
     @Column({
         type: DataType.STRING,
@@ -39,6 +39,22 @@ export default class School extends Model<School | ISchool> {
         unique: true,
     })
         registrationId: string;
+
+    @Column({
+        type: DataType.INTEGER,
+        allowNull: false,
+        unique: true,
+        autoIncrement: true,
+    })
+        edhId: number;
+
+    @Column({
+        type: DataType.VIRTUAL,
+        get() {
+            return `EDH${this.getDataValue('schoolCode') + 1000}`;
+        },
+    })
+        schoolCode: string;
 
     @Column({
         type: DataType.BOOLEAN,
@@ -62,6 +78,18 @@ export default class School extends Model<School | ISchool> {
 
     @HasMany(() => Assessment)
         assessments: Assessment[];
+
+    // Instance method to convert formatted school code to integer
+    static convertFormattedCodeToInteger(formattedCode: string): number | null {
+        if (formattedCode.startsWith('EDH')) {
+            const numericPart = parseInt(formattedCode.slice(3), 10);
+            if (!isNaN(numericPart)) {
+                return numericPart - 1000;
+            }
+        }
+        return null;
+    }
+
 }
 
 export interface ISchool {
@@ -76,6 +104,8 @@ export interface ISchool {
     };
     registrationId: string;
     isActive: boolean;
+    edhId: number;
+    schoolCode: number;
     logo?: string;
     ownerId: string;
 }
