@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import {
     Table, Column, Model, DataType, BelongsTo, ForeignKey,
     IsUUID, PrimaryKey, Default, BelongsToMany,
@@ -7,6 +8,13 @@ import Teacher, { ITeacher } from '../teacher.model';
 import AssessmentTaker from './takers.model';
 import AssessmentQuestion from './questions.model';
 import QuestionBank, { IQuestionBank } from './questionBank.model';
+
+export enum AssessmentTargetAudience {
+    ALL = 'all',
+    TEACHING = 'teaching',
+    NON_TEACHING = 'non_teaching',
+    SPECIFIC = 'specific',
+}
 
 @Table
 export default class Assessment extends Model<Assessment | IAssessment> {
@@ -42,11 +50,11 @@ export default class Assessment extends Model<Assessment | IAssessment> {
 
     @Column({
         type: DataType.ENUM,
-        values: ['all', 'teaching', 'non_teaching', 'specific'],
+        values: Object.values(AssessmentTargetAudience),
         allowNull: false,
-        defaultValue: 'all',
+        defaultValue: AssessmentTargetAudience.ALL,
     })
-        targetAudience: 'all' | 'teaching' | 'non_teaching' | 'specific';
+        targetAudience: AssessmentTargetAudience;
 
     @BelongsToMany(() => Teacher, {
         through: () => AssessmentTaker,
@@ -65,7 +73,7 @@ export interface IAssessment {
     description?: string;
     categories: string[];
     schoolId: string;
-    targetAudience: 'all' | 'teaching' | 'non_teaching' | 'specific';
+    targetAudience: AssessmentTargetAudience;
     assignedTeachers?: ITeacher[];
     questions?: IQuestionBank[];
 }
