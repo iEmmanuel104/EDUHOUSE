@@ -46,6 +46,11 @@ export default class Teacher extends Model<Teacher | ITeacher> {
     })
         phoneNumber: string;
 
+    @Column({
+        type: DataType.STRING,
+        allowNull: true,
+    })
+        imageUrl: string;
 
     @ForeignKey(() => School)
     @Column

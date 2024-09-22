@@ -47,6 +47,12 @@ export default class School extends Model<School | ISchool> {
     })
         isActive: boolean;
 
+    @Column({
+        type: DataType.STRING,
+        allowNull: false,
+    })
+        logo: string;
+    
     // Associations
 
     @HasMany(() => Teacher)
@@ -71,5 +77,6 @@ export interface ISchool {
     };
     registrationId: string;
     isActive: boolean;
+    logo?: string;
     ownerId: string;
 }

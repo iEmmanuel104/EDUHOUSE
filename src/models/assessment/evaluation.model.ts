@@ -4,7 +4,7 @@ import {
     IsUUID, PrimaryKey, Default, BelongsToMany,
 } from 'sequelize-typescript';
 import School from '../school.model';
-import Teacher, { ITeacher } from '../teacher.model';
+import User, { IUser } from '../user.model';
 import AssessmentTaker from './takers.model';
 import AssessmentQuestion from './questions.model';
 import QuestionBank, { IQuestionBank } from './questionBank.model';
@@ -56,12 +56,12 @@ export default class Assessment extends Model<Assessment | IAssessment> {
     })
         targetAudience: AssessmentTargetAudience;
 
-    @BelongsToMany(() => Teacher, {
+    @BelongsToMany(() => User, {
         through: () => AssessmentTaker,
         foreignKey: 'assessmentId',
-        otherKey: 'teacherId',
+        otherKey: 'userId',
     })
-        assignedTeachers: Teacher[];
+        assignedUsers: User[];
 
     @BelongsToMany(() => QuestionBank, () => AssessmentQuestion)
         questions: QuestionBank[];
@@ -74,6 +74,6 @@ export interface IAssessment {
     categories: string[];
     schoolId: string;
     targetAudience: AssessmentTargetAudience;
-    assignedTeachers?: ITeacher[];
+    assignedUsers?: IUser[];
     questions?: IQuestionBank[];
 }
