@@ -42,7 +42,7 @@ export default class School extends Model<School | ISchool> {
     @Column({
         type: DataType.VIRTUAL,
         get() {
-            return `EDH${this.getDataValue('edhId') + 1000}`;
+            return `EDH${this.getDataValue('id') + 1000}`;
         },
     })
         schoolCode: string;
