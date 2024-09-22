@@ -4,6 +4,7 @@ import {
     IsEmail, IsUUID, PrimaryKey, Index, BeforeCreate, BeforeUpdate, BelongsToMany, ForeignKey,
 } from 'sequelize-typescript';
 import Password from './password.model';
+import { Sequelize } from 'sequelize';
 import UserSettings from './userSettings.model';
 import { FindOptions } from 'sequelize';
 import School from './school.model';
@@ -71,6 +72,23 @@ export default class User extends Model<User | IUser> {
         },
     })
         otherName: string;
+    
+    @Column({
+        type: DataType.STRING(14),
+        unique: true,
+        allowNull: false,
+    })
+    @Default(
+        Sequelize.literal(`
+            CONCAT(
+                EXTRACT(YEAR FROM CURRENT_DATE)::TEXT,
+                LPAD(FLOOR(RANDOM() * 100000000)::TEXT, 8, '0'),
+                CHR(65 + FLOOR(RANDOM() * 26))::TEXT,
+                CHR(65 + FLOOR(RANDOM() * 26))::TEXT
+            )
+        `)
+    )
+        registrationNumber: string;
 
     @Column({ type: DataType.STRING })
         gender: string;
@@ -190,6 +208,7 @@ export interface IUser {
     firstName: string;
     lastName: string;
     otherName?: string;
+    registrationNumber?: string;
     status: {
         activated: boolean;
         emailVerified: boolean;
