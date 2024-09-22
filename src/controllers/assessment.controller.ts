@@ -77,14 +77,14 @@ export default class AssessmentController {
 
 
     // assessment taker
-    static async assignAssessmentToTeacher(req: AuthenticatedRequest, res: Response) {
+    static async assignAssessmentToUser(req: AuthenticatedRequest, res: Response) {
         const takerData = req.body;
 
         const newTaker = await AssessmentService.addAssessmentTaker(takerData);
 
         res.status(201).json({
             status: 'success',
-            message: 'Assessment assigned to teacher successfully',
+            message: 'Assessment assigned to user successfully',
             data: {
                 taker: newTaker,
             },
