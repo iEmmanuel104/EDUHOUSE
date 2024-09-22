@@ -2,7 +2,7 @@ import {
     Table, Column, Model, DataType, ForeignKey, Default, IsUUID, PrimaryKey,
 } from 'sequelize-typescript';
 import Assessment from './evaluation.model';
-import QuestionBank from '../questionBank.model';
+import QuestionBank from './questionBank.model';
 
 @Table
 export default class AssessmentQuestion extends Model<AssessmentQuestion | IAssessmentQuestion> {
