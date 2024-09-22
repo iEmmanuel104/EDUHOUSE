@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import AssessmentService, { IViewAssessmentsQuery, IViewAssessmentTakersQuery } from '../services/assessment.service'; 
+import AssessmentService, { IViewAssessmentsQuery, IViewAssessmentTakersQuery } from '../services/assessment.service';
 import { AuthenticatedRequest } from '../middlewares/authMiddleware';
-import { AssessmentTakerStatus } from '../models/assessment/takers.model';
+import { AssessmentTakerStatus } from '../models/evaluation/takers.model';
 
 export default class AssessmentController {
     static async createAssessment(req: AuthenticatedRequest, res: Response) {
@@ -184,5 +184,5 @@ export default class AssessmentController {
             },
         });
     }
-    
+
 }
