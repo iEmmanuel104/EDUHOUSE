@@ -1,7 +1,7 @@
 import {
     Table, Column, Model, DataType, ForeignKey, Default, IsUUID, PrimaryKey,
 } from 'sequelize-typescript';
-import Assessment from './evaluation.model';
+import Assessment from './assessment.model';
 import QuestionBank from './questionBank.model';
 
 @Table
@@ -10,21 +10,21 @@ export default class AssessmentQuestion extends Model<AssessmentQuestion | IAsse
     @PrimaryKey
     @Default(DataType.UUIDV4)
     @Column
-        id: string;
-    
+    id: string;
+
     @ForeignKey(() => Assessment)
     @Column
-        assessmentId: string;
+    assessmentId: string;
 
     @ForeignKey(() => QuestionBank)
     @Column
-        questionId: string;
+    questionId: string;
 
     @Column(DataType.INTEGER)
-        order: number;
+    order: number;
 
     @Column(DataType.BOOLEAN)
-        isCustom: boolean;
+    isCustom: boolean;
 }
 
 export interface IAssessmentQuestion {

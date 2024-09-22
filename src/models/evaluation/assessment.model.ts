@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
 import {
     Table, Column, Model, DataType, BelongsTo, ForeignKey,
-    IsUUID, PrimaryKey, Default, BelongsToMany,
+    IsUUID, PrimaryKey, Default, BelongsToMany, Scopes,
 } from 'sequelize-typescript';
 import School from '../school.model';
 import User, { IUser } from '../user.model';
@@ -15,6 +15,12 @@ export enum AssessmentTargetAudience {
     NON_TEACHING = 'non_teaching',
     SPECIFIC = 'specific',
 }
+
+@Scopes(() => ({
+    School: (schoolId: number) => ({
+        where: { schoolId },
+    }),
+}))
 
 @Table
 export default class Assessment extends Model<Assessment | IAssessment> {
@@ -43,7 +49,7 @@ export default class Assessment extends Model<Assessment | IAssessment> {
 
     @ForeignKey(() => School)
     @Column
-        schoolId: string;
+        schoolId: number;
 
     @BelongsTo(() => School)
         school: School;
@@ -72,7 +78,7 @@ export interface IAssessment {
     name: string;
     description?: string;
     categories: string[];
-    schoolId: string;
+    schoolId: number;
     targetAudience: AssessmentTargetAudience;
     assignedUsers?: IUser[];
     questions?: IQuestionBank[];
