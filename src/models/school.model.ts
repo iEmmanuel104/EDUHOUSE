@@ -1,5 +1,5 @@
 import {
-    Table, Column, Model, DataType, HasMany, IsUUID, PrimaryKey, Default,
+    Table, Column, Model, DataType, HasMany, AutoIncrement, PrimaryKey,
     BelongsToMany,
 } from 'sequelize-typescript';
 import User from './user.model';
@@ -9,11 +9,11 @@ import Admin from './admin.model';
 
 @Table
 export default class School extends Model<School | ISchool> {
-    @IsUUID(4)
+
     @PrimaryKey
-    @Default(DataType.UUIDV4)
+    @AutoIncrement
     @Column
-        id: string;
+        id: number;
 
     @Column({
         type: DataType.STRING,
@@ -39,14 +39,6 @@ export default class School extends Model<School | ISchool> {
         unique: true,
     })
         registrationId: string;
-
-    @Column({
-        type: DataType.INTEGER,
-        allowNull: false,
-        unique: true,
-        autoIncrement: true,
-    })
-        edhId: number;
 
     @Column({
         type: DataType.VIRTUAL,
@@ -93,7 +85,7 @@ export default class School extends Model<School | ISchool> {
 }
 
 export interface ISchool {
-    id?: string;
+    id?: number;
     name: string;
     location: {
         address: string;
@@ -104,7 +96,6 @@ export interface ISchool {
     };
     registrationId: string;
     isActive: boolean;
-    edhId: number;
     schoolCode: number;
     logo?: string;
     ownerId: string;
