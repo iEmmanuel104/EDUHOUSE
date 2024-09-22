@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 
 import {
     Table, Column, Model, DataType, IsUUID, PrimaryKey, Default, IsEmail, Unique, BeforeFind, BelongsToMany,
