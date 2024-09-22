@@ -54,7 +54,6 @@ export default class Teacher extends Model<Teacher | ITeacher> {
     @BelongsTo(() => School)
         school: School;
 
-
     @BeforeCreate
     @BeforeUpdate
     static beforeSaveHook(instance: Teacher) {
