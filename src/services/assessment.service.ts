@@ -1,6 +1,6 @@
 import { Transaction, Op, FindAndCountOptions } from 'sequelize';
-import Assessment, { AssessmentTargetAudience, IAssessment } from '../models/assessment/evaluation.model';
-import AssessmentTaker, { IAssessmentTaker, AssessmentTakerStatus } from '../models/assessment/takers.model';
+import Assessment, { AssessmentTargetAudience, IAssessment } from '../models/evaluation/assessment.model';
+import AssessmentTaker, { IAssessmentTaker, AssessmentTakerStatus } from '../models/evaluation/takers.model';
 import { NotFoundError } from '../utils/customErrors';
 import Pagination, { IPaging } from '../utils/pagination';
 

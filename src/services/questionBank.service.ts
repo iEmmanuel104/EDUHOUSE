@@ -1,5 +1,5 @@
 import { Transaction, Op, FindAndCountOptions } from 'sequelize';
-import QuestionBank, { IQuestionBank } from '../models/assessment/questionBank.model';
+import QuestionBank, { IQuestionBank } from '../models/evaluation/questionBank.model';
 import { NotFoundError } from '../utils/customErrors';
 import Pagination, { IPaging } from '../utils/pagination';
 

@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 import {
-    Table, Column, Model, DataType, HasOne, Default, BeforeFind, Scopes, BelongsTo, 
+    Table, Column, Model, DataType, HasOne, Default, BeforeFind, Scopes, BelongsTo,
     IsEmail, IsUUID, PrimaryKey, Index, BeforeCreate, BeforeUpdate, BelongsToMany, ForeignKey,
 } from 'sequelize-typescript';
 import Password from './password.model';
@@ -8,8 +8,8 @@ import { Sequelize } from 'sequelize';
 import UserSettings from './userSettings.model';
 import { FindOptions } from 'sequelize';
 import School from './school.model';
-import Assessment from './assessment/evaluation.model';
-import AssessmentTaker from './assessment/takers.model';
+import Assessment from './evaluation/assessment.model';
+import AssessmentTaker from './evaluation/takers.model';
 
 @Scopes(() => ({
     withSettings: {
@@ -21,7 +21,11 @@ import AssessmentTaker from './assessment/takers.model';
             },
         ],
     },
+    School: (schoolId: number) => ({
+        where: { schoolId },
+    }),
 }))
+
 @Table
 export default class User extends Model<User | IUser> {
     @IsUUID(4)
@@ -72,7 +76,7 @@ export default class User extends Model<User | IUser> {
         },
     })
         otherName: string;
-    
+
     @Column({
         type: DataType.STRING(14),
         unique: true,
@@ -108,7 +112,7 @@ export default class User extends Model<User | IUser> {
         defaultValue: true,
     })
         isTeachingStaff: boolean;
-    
+
     @Column({
         type: DataType.STRING,
         allowNull: false,
@@ -134,9 +138,9 @@ export default class User extends Model<User | IUser> {
 
     @Column({ type: DataType.JSONB })
         phone: {
-            countryCode: string;
-            number: string;
-        };
+        countryCode: string;
+        number: string;
+    };
 
     @Column({
         type: DataType.DATEONLY,
@@ -150,19 +154,19 @@ export default class User extends Model<User | IUser> {
         },
     })
         dob: Date;
-    
+
 
     @ForeignKey(() => School)
     @Column
-        schoolId: string;
-    
+        schoolId: number;
+
     // Associations
     @HasOne(() => Password)
         password: Password;
 
     @HasOne(() => UserSettings)
         settings: UserSettings;
-    
+
     @BeforeFind
     static beforeFindHook(options: FindOptions) {
         if (options.where && 'email' in options.where && typeof options.where.email === 'string') {
@@ -197,7 +201,7 @@ export default class User extends Model<User | IUser> {
 
     @BelongsTo(() => School)
         school: School;
-    
+
     static capitalizeFirstLetter(str: string): string {
         return str.charAt(0).toUpperCase() + str.slice(1);
     }
@@ -222,5 +226,5 @@ export interface IUser {
     dob?: Date;
     isTeachingStaff?: boolean;
     classAssigned?: string;
-    schoolId: string;
+    schoolId: number;
 }

@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 import {
-    Table, Column, Model, DataType, ForeignKey, BelongsTo,
+    Table, Column, Model, DataType, ForeignKey, BelongsTo, Scopes,
 } from 'sequelize-typescript';
 import School from './school.model';
 import Admin from './admin.model';
@@ -11,6 +11,12 @@ export enum AdminRole {
     GUEST = 'guest',
 }
 
+@Scopes(() => ({
+    School: (schoolId: number) => ({
+        where: { schoolId },
+    }),
+}))
+
 @Table
 export default class SchoolAdmin extends Model<SchoolAdmin | ISchoolAdmin> {
     @ForeignKey(() => Admin)
@@ -19,7 +25,7 @@ export default class SchoolAdmin extends Model<SchoolAdmin | ISchoolAdmin> {
 
     @ForeignKey(() => School)
     @Column
-        schoolId: string;
+        schoolId: number;
     
     @Column({
         type: DataType.ENUM,
@@ -38,6 +44,6 @@ export default class SchoolAdmin extends Model<SchoolAdmin | ISchoolAdmin> {
 
 export interface ISchoolAdmin {
     adminId: string;
-    schoolId: string;
+    schoolId: number;
     role: AdminRole;
 }

@@ -1,10 +1,9 @@
 import {
-    Table, Column, Model, DataType, HasMany, AutoIncrement, PrimaryKey,
-    BelongsToMany,
+    Table, Column, Model, DataType, HasMany, PrimaryKey, AutoIncrement, BelongsToMany,
 } from 'sequelize-typescript';
 import User from './user.model';
 import SchoolAdmin from './schoolAdmin.model';
-import Assessment from './assessment/evaluation.model';
+import Assessment from './evaluation/assessment.model';
 import Admin from './admin.model';
 
 @Table
@@ -12,7 +11,7 @@ export default class School extends Model<School | ISchool> {
 
     @PrimaryKey
     @AutoIncrement
-    @Column
+    @Column(DataType.INTEGER)
         id: number;
 
     @Column({
@@ -26,12 +25,12 @@ export default class School extends Model<School | ISchool> {
         allowNull: false,
     })
         location: {
-            address: string;
-            city: string;
-            state: string;
-            country: string;
-            postalCode: string;
-        };
+        address: string;
+        city: string;
+        state: string;
+        country: string;
+        postalCode: string;
+    };
 
     @Column({
         type: DataType.STRING,
@@ -43,7 +42,7 @@ export default class School extends Model<School | ISchool> {
     @Column({
         type: DataType.VIRTUAL,
         get() {
-            return `EDH${this.getDataValue('schoolCode') + 1000}`;
+            return `EDH${this.getDataValue('edhId') + 1000}`;
         },
     })
         schoolCode: string;
@@ -60,7 +59,7 @@ export default class School extends Model<School | ISchool> {
         allowNull: false,
     })
         logo: string;
-    
+
     // Associations
     @HasMany(() => User)
         users: User[];
@@ -71,7 +70,7 @@ export default class School extends Model<School | ISchool> {
     @HasMany(() => Assessment)
         assessments: Assessment[];
 
-    // Instance method to convert formatted school code to integer
+    // Static method to convert formatted school code to integer
     static convertFormattedCodeToInteger(formattedCode: string): number | null {
         if (formattedCode.startsWith('EDH')) {
             const numericPart = parseInt(formattedCode.slice(3), 10);
@@ -96,7 +95,7 @@ export interface ISchool {
     };
     registrationId: string;
     isActive: boolean;
-    schoolCode: number;
+    schoolCode?: string;
     logo?: string;
     ownerId: string;
 }
