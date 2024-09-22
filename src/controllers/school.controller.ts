@@ -51,6 +51,24 @@ export default class SchoolController {
         const { id } = req.params;
         const updateData = req.body;
 
+        // const { firstName, lastName, otherName, displayImage, gender, isDeactivated } = req.body;
+
+        //         // eslint-disable-next-line no-undef
+        //         const file = req.file as Express.Multer.File | undefined;
+        //         let url;
+        //         if (file) {
+        //             const result = await CloudinaryClientConfig.uploadtoCloudinary({
+        //                 fileBuffer: file.buffer,
+        //                 id: req.user.id,
+        //                 name: file.originalname,
+        //                 type: 'image',
+        //             });
+        //             url = result.url as string;
+        //         } else if (displayImage) {
+        //             url = displayImage;
+        //         }
+
+
         const updatedSchool = await SchoolService.updateSchool(id, updateData);
 
         res.status(200).json({
