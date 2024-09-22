@@ -1,5 +1,5 @@
 import { Transaction, FindAndCountOptions } from 'sequelize';
-import SchoolAdmin, { ISchoolAdmin, UserRole } from '../models/schoolAdmin.model';
+import SchoolAdmin, { ISchoolAdmin, AdminRole } from '../models/schoolAdmin.model';
 import { NotFoundError } from '../utils/customErrors';
 import Pagination, { IPaging } from '../utils/pagination';
 
@@ -7,7 +7,7 @@ export interface IViewSchoolAdminsQuery {
     page?: number;
     size?: number;
     schoolId?: string;
-    role?: UserRole;
+    role?: AdminRole;
 }
 
 export default class SchoolAdminService {
@@ -47,9 +47,9 @@ export default class SchoolAdminService {
         }
     }
 
-    static async viewSingleSchoolAdmin(userId: string, schoolId: string): Promise<SchoolAdmin> {
+    static async viewSingleSchoolAdmin(adminId: string, schoolId: string): Promise<SchoolAdmin> {
         const schoolAdmin: SchoolAdmin | null = await SchoolAdmin.findOne({
-            where: { userId, schoolId },
+            where: { adminId, schoolId },
         });
 
         if (!schoolAdmin) {

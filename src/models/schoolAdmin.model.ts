@@ -3,9 +3,9 @@ import {
     Table, Column, Model, DataType, ForeignKey, BelongsTo,
 } from 'sequelize-typescript';
 import School from './school.model';
-import User from './user.model';
+import Admin from './admin.model';
 
-export enum UserRole {
+export enum AdminRole {
     OWNER = 'owner',
     ADMIN = 'admin',
     GUEST = 'guest',
@@ -13,9 +13,9 @@ export enum UserRole {
 
 @Table
 export default class SchoolAdmin extends Model<SchoolAdmin | ISchoolAdmin> {
-    @ForeignKey(() => User)
+    @ForeignKey(() => Admin)
     @Column
-        userId: string;
+        adminId: string;
 
     @ForeignKey(() => School)
     @Column
@@ -23,21 +23,21 @@ export default class SchoolAdmin extends Model<SchoolAdmin | ISchoolAdmin> {
     
     @Column({
         type: DataType.ENUM,
-        values: Object.values(UserRole),
+        values: Object.values(AdminRole),
         allowNull: false,
-        defaultValue: UserRole.GUEST,
+        defaultValue: AdminRole.GUEST,
     })
-        role: UserRole;
+        role: AdminRole;
 
-    @BelongsTo(() => User)
-        user: User;
+    @BelongsTo(() => Admin)
+        admin: Admin;
 
     @BelongsTo(() => School)
         school: School;
 }
 
 export interface ISchoolAdmin {
-    userId: string;
+    adminId: string;
     schoolId: string;
-    role: UserRole;
+    role: AdminRole;
 }

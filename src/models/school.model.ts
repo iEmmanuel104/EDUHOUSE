@@ -2,10 +2,10 @@ import {
     Table, Column, Model, DataType, HasMany, IsUUID, PrimaryKey, Default,
     BelongsToMany,
 } from 'sequelize-typescript';
-import User from './user.model';
 import Teacher from './teacher.model';
 import SchoolAdmin from './schoolAdmin.model';
 import Assessment from './assessment/evaluation.model';
+import Admin from './admin.model';
 
 @Table
 export default class School extends Model<School | ISchool> {
@@ -52,8 +52,8 @@ export default class School extends Model<School | ISchool> {
     @HasMany(() => Teacher)
         teachers: Teacher[];
 
-    @BelongsToMany(() => User, () => SchoolAdmin)
-        admins: User[];
+    @BelongsToMany(() => Admin, () => SchoolAdmin)
+        admins: Admin[];
 
     @HasMany(() => Assessment)
         assessments: Assessment[];
