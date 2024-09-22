@@ -1,7 +1,8 @@
-import { Transaction, Op, FindAndCountOptions } from 'sequelize';
+import { Transaction, Op, FindAndCountOptions, Sequelize } from 'sequelize';
 import School, { ISchool } from '../models/school.model';
 import { NotFoundError } from '../utils/customErrors';
 import Pagination, { IPaging } from '../utils/pagination';
+import Validator from '../utils/validators';
 
 export interface IViewSchoolsQuery {
     page?: number;
@@ -25,6 +26,11 @@ export default class SchoolService {
             where[Op.or] = [
                 { name: { [Op.iLike]: `%${query}%` } },
                 { registrationId: { [Op.iLike]: `%${query}%` } },
+                Sequelize.where(
+                    Sequelize.fn('concat', 'EDH', Sequelize.literal('school_code + 1000')),
+                    { [Op.iLike]: `%${query}%` }
+                ),
+                { schoolCode: isNaN(parseInt(query)) ? -1 : parseInt(query) },
             ];
         }
 
@@ -50,8 +56,25 @@ export default class SchoolService {
         }
     }
 
-    static async viewSingleSchool(id: string): Promise<School> {
-        const school: School | null = await School.findByPk(id);
+    static async viewSingleSchool(identifier: string): Promise<School> {
+        let school: School | null = null;
+
+        // Check if the identifier is a UUID
+        if (Validator.isUUID(identifier)) {
+            school = await School.findByPk(identifier);
+        } else if (identifier.startsWith('EDH')) {
+            // If it starts with 'EDH', assume it's a formatted school code
+            const schoolId = await School.convertFormattedCodeToInteger(identifier);
+            if (schoolId) {
+                school = await School.findOne({ where: { schoolCode: schoolId } });
+            }
+        } else {
+            // Otherwise, try to parse it as a school code number
+            const schoolCode = parseInt(identifier, 10);
+            if (!isNaN(schoolCode)) {
+                school = await School.findOne({ where: { schoolCode } });
+            }
+        }
 
         if (!school) {
             throw new NotFoundError('School not found');
