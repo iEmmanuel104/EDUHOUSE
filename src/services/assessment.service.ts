@@ -16,7 +16,7 @@ export interface IViewAssessmentTakersQuery {
     page?: number;
     size?: number;
     assessmentId?: string;
-    teacherId?: string;
+    userId?: string;
     status?: AssessmentTakerStatus;
 }
 
@@ -94,7 +94,7 @@ export default class AssessmentService {
     }
 
     static async viewAssessmentTakers(queryData?: IViewAssessmentTakersQuery): Promise<{ takers: AssessmentTaker[], count: number, totalPages?: number }> {
-        const { page, size, assessmentId, teacherId, status } = queryData || {};
+        const { page, size, assessmentId, userId, status } = queryData || {};
 
         const where: Record<string | symbol, unknown> = {};
 
@@ -102,8 +102,8 @@ export default class AssessmentService {
             where.assessmentId = assessmentId;
         }
 
-        if (teacherId) {
-            where.teacherId = teacherId;
+        if (userId) {
+            where.userId = userId;
         }
 
         if (status) {

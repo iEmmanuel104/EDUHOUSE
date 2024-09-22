@@ -2,7 +2,7 @@ import {
     Table, Column, Model, DataType, HasMany, IsUUID, PrimaryKey, Default,
     BelongsToMany,
 } from 'sequelize-typescript';
-import Teacher from './teacher.model';
+import User from './user.model';
 import SchoolAdmin from './schoolAdmin.model';
 import Assessment from './assessment/evaluation.model';
 import Admin from './admin.model';
@@ -54,9 +54,8 @@ export default class School extends Model<School | ISchool> {
         logo: string;
     
     // Associations
-
-    @HasMany(() => Teacher)
-        teachers: Teacher[];
+    @HasMany(() => User)
+        users: User[];
 
     @BelongsToMany(() => Admin, () => SchoolAdmin)
         admins: Admin[];

@@ -3,7 +3,7 @@ import {
     Table, Column, Model, DataType, ForeignKey, Default, IsUUID, PrimaryKey,
 } from 'sequelize-typescript';
 import Assessment from './evaluation.model';
-import Teacher from '../teacher.model';
+import User from '../user.model';
 
 export enum AssessmentTakerStatus {
     PENDING = 'pending',
@@ -24,9 +24,9 @@ export default class AssessmentTaker extends Model<AssessmentTaker | IAssessment
     @Column
         assessmentId: string;
 
-    @ForeignKey(() => Teacher)
+    @ForeignKey(() => User)
     @Column
-        teacherId: string;
+        userId: string;
 
     @Column({
         type: DataType.ENUM,
@@ -54,7 +54,7 @@ export default class AssessmentTaker extends Model<AssessmentTaker | IAssessment
 export interface IAssessmentTaker {
     id?: string;
     assessmentId: string;
-    teacherId: string;
+    userId: string;
     status: AssessmentTakerStatus;
     dueDate: Date;
     startedAt: Date;
