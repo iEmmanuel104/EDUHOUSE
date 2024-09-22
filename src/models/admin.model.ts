@@ -1,5 +1,13 @@
 
-import { Table, Column, Model, DataType, IsUUID, PrimaryKey, Default, IsEmail, Unique } from 'sequelize-typescript';
+import {
+    Table, Column, Model, DataType, IsUUID, PrimaryKey, Default, IsEmail, Unique, Scopes,
+} from 'sequelize-typescript';
+
+@Scopes(() => ({
+    School: (schoolId: number) => ({
+        where: { schoolId },
+    }),
+}))
 
 @Table
 export default class Admin extends Model<Admin | IAdmin> {
