@@ -6,7 +6,7 @@ import School from '../school.model';
 import Teacher, { ITeacher } from '../teacher.model';
 import AssessmentTaker from './takers.model';
 import AssessmentQuestion from './questions.model';
-import QuestionBank, { IQuestionBank } from '../questionBank.model';
+import QuestionBank, { IQuestionBank } from './questionBank.model';
 
 @Table
 export default class Assessment extends Model<Assessment | IAssessment> {
