@@ -38,7 +38,7 @@ export default class School extends Model<School | ISchool> {
         allowNull: false,
         unique: true,
     })
-        registrationNumber: string;
+        registrationId: string;
 
     @Column({
         type: DataType.BOOLEAN,
@@ -46,7 +46,7 @@ export default class School extends Model<School | ISchool> {
         defaultValue: false,
     })
         isActive: boolean;
-    
+
     // Associations
 
     @HasMany(() => Teacher)
@@ -69,7 +69,7 @@ export interface ISchool {
         country: string;
         postalCode: string;
     };
-    registrationNumber: string;
+    registrationId: string;
     isActive: boolean;
     ownerId: string;
 }
