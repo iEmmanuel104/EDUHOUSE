@@ -15,10 +15,7 @@ export default class Password extends Model<Password | IPassword> {
 
     @Column({ type: DataType.STRING, allowNull: false })
         password: string;  
-        
-    @Column({ type: DataType.STRING, allowNull: true })
-        transactionPin: string;
-    
+
     // === ASSOCIATIONS, HOOKS, METHODS ===
         
     // Define an association between this model and the "User" model
@@ -35,10 +32,6 @@ export default class Password extends Model<Password | IPassword> {
         if (instance.password) {
             instance.password = bcrypt.hashSync(instance.password, bcrypt.genSaltSync(10));
         }
-
-        if (instance.transactionPin) {
-            instance.transactionPin = bcrypt.hashSync(instance.transactionPin, bcrypt.genSaltSync(10));
-        }
     }
 
     @BeforeUpdate
@@ -46,10 +39,6 @@ export default class Password extends Model<Password | IPassword> {
         console.log('hashing password before update');
         if (instance.password) {
             instance.password = bcrypt.hashSync(instance.password, bcrypt.genSaltSync(10));
-        }
-
-        if (instance.transactionPin) {
-            instance.transactionPin = bcrypt.hashSync(instance.transactionPin, bcrypt.genSaltSync(10));
         }
     }
 
@@ -59,11 +48,6 @@ export default class Password extends Model<Password | IPassword> {
         return bcrypt.compareSync(password, this.password);
     }
 
-    // Method to check if a provided transaction pin is valid
-    isValidTransactionPin(transactionPin: string): boolean {
-        if (!this.transactionPin) return false;
-        return bcrypt.compareSync(transactionPin, this.transactionPin);
-    }
 
     // remove password from json response
     toJSON() {
@@ -77,6 +61,5 @@ export default class Password extends Model<Password | IPassword> {
 
 export interface IPassword {
     password?: string; 
-    transactionPin?: string;
     userId: string;
 }
