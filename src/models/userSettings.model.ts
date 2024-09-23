@@ -1,4 +1,3 @@
-// Import necessary modules and dependencies
 import {
     Table, Column, Model, DataType, ForeignKey, DefaultScope,
     BelongsTo, IsUUID, Unique, PrimaryKey, Default,
