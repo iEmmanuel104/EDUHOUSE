@@ -1,5 +1,7 @@
+import { Op } from 'sequelize';
 import Admin, { IAdmin } from '../../models/admin.model';
 import { BadRequestError, NotFoundError } from '../../utils/customErrors';
+import { ADMIN_EMAIL } from '../../utils/constants';
 
 export default class AdminService {
 
@@ -14,7 +16,14 @@ export default class AdminService {
     }
 
     static async getAllAdmins(): Promise<Admin[]> {
-        return Admin.findAll();
+    // exclude the ADMIN_EMAIL from the list of admins
+        return Admin.findAll({
+            where: {
+                email: {
+                    [Op.ne]: ADMIN_EMAIL,
+                },
+            },
+        });
     }
 
     static async getAdminByEmail(email: string): Promise<Admin> {   
@@ -33,6 +42,11 @@ export default class AdminService {
         if (!admin) {
             throw new NotFoundError('Admin not found');
         }
+
+        if (admin.email === ADMIN_EMAIL) {
+            throw new BadRequestError('Cannot delete the super admin');
+        }
+
         await admin.destroy();
     }
 }
