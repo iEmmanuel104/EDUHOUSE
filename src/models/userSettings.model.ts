@@ -23,43 +23,43 @@ export default class UserSettings extends Model<UserSettings | IUserSettings> {
     @PrimaryKey
     @Default(DataType.UUIDV4)
     @Column
-        id: string;
+    id: string;
 
     @Column({ type: DataType.DATEONLY })
-        joinDate: string;
+    joinDate: string;
 
     @Column({ type: DataType.DATE })
-        lastLogin: Date | null;
+    lastLogin: Date | null;
 
     @Column({
         type: DataType.BOOLEAN,
         defaultValue: false,
         allowNull: false,
     })
-        isBlocked: boolean;
+    isBlocked: boolean;
 
     @Column({
         type: DataType.BOOLEAN,
         defaultValue: false,
         allowNull: false,
     })
-        isDeactivated: boolean;
+    isDeactivated: boolean;
 
     @Column({
         type: DataType.JSONB,
         defaultValue: null,
         allowNull: true,
     })
-        meta: IBlockMeta | null;
+    meta: IBlockMeta | null;
 
     @IsUUID(4)
     @Unique
     @ForeignKey(() => User)
     @Column
-        userId: string;
+    userId: string;
 
     @BelongsTo(() => User)
-        user: User;
+    user: User;
 }
 
 export interface IUserSettings {
