@@ -197,7 +197,7 @@ export default class User extends Model<User | IUser> {
     })
         assessments: Assessment[];
 
-    @BelongsTo(() => School)
+    @BelongsTo(() => School, 'schoolId')
         school: School;
 
     static capitalizeFirstLetter(str: string): string {
