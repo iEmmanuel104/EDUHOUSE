@@ -61,8 +61,8 @@ export default class School extends Model<School | ISchool> {
         logo: string;
 
     // Associations
-    @HasMany(() => User)
-        users: User[];
+    @HasMany(() => User, 'schoolId')
+        teachers: User[];
 
     @BelongsToMany(() => Admin, () => SchoolAdmin)
         admins: Admin[];
