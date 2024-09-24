@@ -1,7 +1,8 @@
 import { Transaction, Op, FindAndCountOptions, Sequelize } from 'sequelize';
 import School, { ISchool } from '../models/school.model';
-import SchoolAdmin, { ISchoolAdmin, AdminRole } from '../models/schoolAdmin.model';
-import { NotFoundError } from '../utils/customErrors';
+import SchoolAdmin, { ISchoolAdmin, AdminRole, SchoolAdminPermissions } from '../models/schoolAdmin.model';
+import Admin from '../models/admin.model';
+import { NotFoundError, UnauthorizedError } from '../utils/customErrors';
 import Pagination, { IPaging } from '../utils/pagination';
 import Validator from '../utils/validators';
 
@@ -20,13 +21,27 @@ export interface IViewSchoolAdminsQuery {
 }
 
 export default class SchoolService {
-    static async addSchool(schoolData: ISchool): Promise<School> {
+    static async addSchool(schoolData: ISchool, adminId: string): Promise<School> {
+        const admin = await Admin.findByPk(adminId);
+        if (!admin || !admin.isSuperAdmin) {
+            throw new UnauthorizedError('Only superadmins can create schools');
+        }
+
         const school = await School.create({ ...schoolData });
+
+        // Add the superadmin as the school admin owner
+        await SchoolAdmin.create({
+            adminId: admin.id,
+            schoolId: school.id,
+            role: AdminRole.OWNER,
+            restrictions: [],
+        });
+
         return school;
     }
 
-    static async viewSchools(queryData?: IViewSchoolsQuery): Promise<{ schools: School[], count: number, totalPages?: number }> {
-        const { page, size, q: query, isActive } = queryData || {};
+    static async viewSchools(queryData: IViewSchoolsQuery, admin: Admin): Promise<{ schools: School[], count: number, totalPages?: number }> {
+        const { page, size, q: query, isActive } = queryData;
 
         const where: Record<string | symbol, unknown> = {};
 
@@ -47,6 +62,13 @@ export default class SchoolService {
         }
 
         const queryOptions: FindAndCountOptions<School> = { where };
+
+        // Filter schools based on admin permissions
+        if (!admin.isSuperAdmin) {
+            const adminSchools = await SchoolAdmin.findAll({ where: { adminId: admin.id } });
+            const schoolIds = adminSchools.map(as => as.schoolId);
+            where.id = { [Op.in]: schoolIds };
+        }
 
         if (page && size && page > 0 && size > 0) {
             const { limit, offset } = Pagination.getPagination({ page, size } as IPaging);
@@ -102,8 +124,12 @@ export default class SchoolService {
         transaction ? await school.destroy({ transaction }) : await school.destroy();
     }
 
-    static async addSchoolAdmin(schoolAdminData: ISchoolAdmin): Promise<SchoolAdmin> {
-        const schoolAdmin = await SchoolAdmin.create({ ...schoolAdminData });
+    static async addSchoolAdmin(schoolAdminData: ISchoolAdmin & { restrictions?: SchoolAdminPermissions[] }): Promise<SchoolAdmin> {
+        const { restrictions, ...data } = schoolAdminData;
+        const schoolAdmin = await SchoolAdmin.create({
+            ...data,
+            restrictions: restrictions || [],
+        });
         return schoolAdmin;
     }
 
