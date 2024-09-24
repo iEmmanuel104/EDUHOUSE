@@ -65,7 +65,10 @@ export default class SchoolService {
             where.isActive = isActive;
         }
 
-        const queryOptions: FindAndCountOptions<School> = { where };
+        const queryOptions: FindAndCountOptions<School> = {
+            where,
+            attributes: ['id', 'name', 'registrationId', 'schoolCode', 'isActive', 'logo'],
+        };
 
         // Filter schools based on user type and permissions
         if (user) {
@@ -75,6 +78,16 @@ export default class SchoolService {
                     const schoolIds = adminSchools.map(as => as.schoolId);
                     where.id = { [Op.in]: schoolIds };
                 }
+
+                // Include additional statistics for admin users
+                queryOptions.attributes = [
+                    ...queryOptions.attributes as string[],
+                    [Sequelize.literal('CAST((SELECT COUNT(*) FROM "Users" WHERE "Users"."schoolId" = "School"."id") AS INTEGER)'), 'teacherCount'],
+                    [Sequelize.literal('CAST((SELECT COUNT(*) FROM "SchoolAdmins" WHERE "SchoolAdmins"."schoolId" = "School"."id") AS INTEGER)'), 'adminCount'],
+                    [Sequelize.literal('CAST((SELECT COUNT(*) FROM "Assessments" WHERE "Assessments"."schoolId" = "School"."id") AS INTEGER)'), 'assessmentCount'],
+                    [Sequelize.literal('CAST((SELECT COUNT(*) FROM "Users" WHERE "Users"."schoolId" = "School"."id" AND "Users"."isTeachingStaff" = true) AS INTEGER)'), 'teachingStaffCount'],
+                    [Sequelize.literal('CAST((SELECT COUNT(*) FROM "Users" WHERE "Users"."schoolId" = "School"."id" AND "Users"."isTeachingStaff" = false) AS INTEGER)'), 'nonTeachingStaffCount'],
+                ];
             } else if (user instanceof User) {
                 // If it's a regular user, only return their school
                 where.id = user.schoolId;
