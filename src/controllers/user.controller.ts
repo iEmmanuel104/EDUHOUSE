@@ -3,6 +3,7 @@ import UserService from '../services/user.service';
 import { BadRequestError } from '../utils/customErrors';
 import { AuthenticatedRequest } from '../middlewares/authMiddleware';
 import CloudinaryClientConfig from '../clients/cloudinary.config';
+import SchoolTeacher from '../models/schoolTeacher.model';
 
 export default class UserController {
 
@@ -106,6 +107,65 @@ export default class UserController {
             status: 'success',
             message: 'User updated successfully',
             data: updatedUser,
+        });
+    }
+
+
+    static async addTeacherToSchool(req: AuthenticatedRequest, res: Response) {
+        const { schoolId, teacherId, isTeachingStaff, classAssigned } = req.body;
+
+        if (!schoolId || !teacherId) {
+            throw new BadRequestError('SchoolId and teacherId are required');
+        }
+
+        const newSchoolTeacher = await UserService.addTeacherToSchool(schoolId, teacherId, isTeachingStaff, classAssigned);
+
+        res.status(201).json({
+            status: 'success',
+            message: 'Teacher added to school successfully',
+            data: {
+                schoolTeacher: newSchoolTeacher,
+            },
+        });
+    }
+
+    static async updateTeacherInSchool(req: AuthenticatedRequest, res: Response) {
+        const { schoolId, teacherId } = req.query;
+        const { isTeachingStaff, classAssigned, isActive } = req.body;
+
+        if (!schoolId || !teacherId) {
+            throw new BadRequestError('SchoolId and teacherId are required');
+        }
+
+        const updateData: Partial<SchoolTeacher> = {};
+        if (isTeachingStaff !== undefined) updateData.isTeachingStaff = isTeachingStaff;
+        if (classAssigned !== undefined) updateData.classAssigned = classAssigned;
+        if (isActive !== undefined) updateData.isActive = isActive;
+
+        const updatedSchoolTeacher = await UserService.updateTeacherInSchool(schoolId as string, teacherId as string, updateData);
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Teacher in school updated successfully',
+            data: {
+                schoolTeacher: updatedSchoolTeacher,
+            },
+        });
+    }
+
+    static async removeTeacherFromSchool(req: AuthenticatedRequest, res: Response) {
+        const { schoolId, teacherId } = req.query;
+
+        if (!schoolId || !teacherId) {
+            throw new BadRequestError('SchoolId and teacherId are required');
+        }
+
+        await UserService.removeTeacherFromSchool(schoolId as string, teacherId as string);
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Teacher removed from school successfully',
+            data: null,
         });
     }
 }
