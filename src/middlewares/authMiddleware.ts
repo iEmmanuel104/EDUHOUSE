@@ -14,8 +14,6 @@ export interface AuthenticatedRequest extends Request {
 }
 
 export interface AdminAuthenticatedRequest extends Request {
-    isSuperAdmin: boolean;
-    email: string;
     admin: Admin;
 }
 
@@ -124,7 +122,6 @@ export const adminAuth = function (tokenType: ENCRYPTEDTOKEN) {
 
         const admin = await AdminService.getAdminByEmail(tokenData.authKey as string);
         (req as AdminAuthenticatedRequest).admin = admin;
-        (req as AdminAuthenticatedRequest).isSuperAdmin = admin.isSuperAdmin;
 
         logger.authorized('User authorized');
 
