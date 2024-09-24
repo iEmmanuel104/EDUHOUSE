@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 import {
-    Table, Column, Model, DataType, HasOne, Default, BeforeFind, Scopes, BelongsTo,
+    Table, Column, Model, DataType, HasOne, Default, BeforeFind, Scopes,
     IsEmail, IsUUID, PrimaryKey, Index, BeforeCreate, BeforeUpdate, BelongsToMany, ForeignKey,
 } from 'sequelize-typescript';
 import Password from './password.model';
@@ -9,6 +9,7 @@ import { FindOptions } from 'sequelize';
 import School from './school.model';
 import Assessment from './evaluation/assessment.model';
 import AssessmentTaker from './evaluation/takers.model';
+import SchoolTeacher from './schoolTeacher.model';
 
 @Scopes(() => ({
     withSettings: {
@@ -197,8 +198,8 @@ export default class User extends Model<User | IUser> {
     })
         assessments: Assessment[];
 
-    @BelongsTo(() => School, 'schoolId')
-        school: School;
+    @BelongsToMany(() => School, () => SchoolTeacher)
+        schools: School[];
 
     static capitalizeFirstLetter(str: string): string {
         return str.charAt(0).toUpperCase() + str.slice(1);
