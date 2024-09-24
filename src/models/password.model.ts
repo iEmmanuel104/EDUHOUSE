@@ -11,22 +11,22 @@ export default class Password extends Model<Password | IPassword> {
     @PrimaryKey
     @Default(DataType.UUIDV4)
     @Column
-        id: string;
+    id: string;
 
     @Column({ type: DataType.STRING, allowNull: false })
-        password: string;  
+    password: string;
 
     // === ASSOCIATIONS, HOOKS, METHODS ===
-        
+
     // Define an association between this model and the "User" model
     @BelongsTo(() => User)
-        user: User;
-    
+    user: User;
+
     @IsUUID(4)
     @ForeignKey(() => User)
     @Column
-        userId: string;
-    
+    userId: string;
+
     @BeforeCreate
     static hashPasswordBeforeCreate(instance: Password) {
         if (instance.password) {
@@ -60,6 +60,6 @@ export default class Password extends Model<Password | IPassword> {
 
 
 export interface IPassword {
-    password?: string; 
+    password?: string;
     userId: string;
 }
