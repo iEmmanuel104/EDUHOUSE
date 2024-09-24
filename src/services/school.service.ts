@@ -2,16 +2,17 @@ import { Transaction, Op, FindAndCountOptions, Sequelize } from 'sequelize';
 import School, { ISchool } from '../models/school.model';
 import SchoolAdmin, { ISchoolAdmin, AdminRole, SchoolAdminPermissions } from '../models/schoolAdmin.model';
 import Admin from '../models/admin.model';
+import User from '../models/user.model';
 import { NotFoundError, UnauthorizedError } from '../utils/customErrors';
 import Pagination, { IPaging } from '../utils/pagination';
 import Validator from '../utils/validators';
-import User from '../models/user.model';
 
 export interface IViewSchoolsQuery {
     page?: number;
     size?: number;
     q?: string;
     isActive?: boolean;
+    userId?: string; // New optional parameter for superadmin filtering
 }
 
 export interface IViewSchoolAdminsQuery {
@@ -45,7 +46,7 @@ export default class SchoolService {
         queryData: IViewSchoolsQuery,
         user?: Admin | User
     ): Promise<{ schools: School[], count: number, totalPages?: number }> {
-        const { page, size, q: query, isActive } = queryData;
+        const { page, size, q: query, isActive, userId } = queryData;
 
         const where: Record<string | symbol, unknown> = {};
 
@@ -68,12 +69,27 @@ export default class SchoolService {
         const queryOptions: FindAndCountOptions<School> = {
             where,
             attributes: ['id', 'name', 'registrationId', 'schoolCode', 'isActive', 'logo'],
+            include: [{
+                model: User,
+                as: 'teachers',
+                attributes: ['id'],
+                through: { attributes: [] },
+            }],
         };
 
         // Filter schools based on user type and permissions
         if (user) {
             if (user instanceof Admin) {
-                if (!user.isSuperAdmin) {
+                if (user.isSuperAdmin && userId) {
+                    // If superadmin and userId is provided, filter schools by userId
+                    queryOptions.include = [{
+                        model: User,
+                        as: 'teachers',
+                        where: { id: userId },
+                        attributes: ['id'],
+                        through: { attributes: [] },
+                    }];
+                } else if (!user.isSuperAdmin) {
                     const adminSchools = await SchoolAdmin.findAll({ where: { adminId: user.id } });
                     const schoolIds = adminSchools.map(as => as.schoolId);
                     where.id = { [Op.in]: schoolIds };
@@ -82,15 +98,21 @@ export default class SchoolService {
                 // Include additional statistics for admin users
                 queryOptions.attributes = [
                     ...queryOptions.attributes as string[],
-                    [Sequelize.literal('CAST((SELECT COUNT(*) FROM "Users" WHERE "Users"."schoolId" = "School"."id") AS INTEGER)'), 'teacherCount'],
+                    [Sequelize.literal('CAST((SELECT COUNT(*) FROM "SchoolTeachers" WHERE "SchoolTeachers"."schoolId" = "School"."id") AS INTEGER)'), 'teacherCount'],
                     [Sequelize.literal('CAST((SELECT COUNT(*) FROM "SchoolAdmins" WHERE "SchoolAdmins"."schoolId" = "School"."id") AS INTEGER)'), 'adminCount'],
                     [Sequelize.literal('CAST((SELECT COUNT(*) FROM "Assessments" WHERE "Assessments"."schoolId" = "School"."id") AS INTEGER)'), 'assessmentCount'],
-                    [Sequelize.literal('CAST((SELECT COUNT(*) FROM "Users" WHERE "Users"."schoolId" = "School"."id" AND "Users"."isTeachingStaff" = true) AS INTEGER)'), 'teachingStaffCount'],
-                    [Sequelize.literal('CAST((SELECT COUNT(*) FROM "Users" WHERE "Users"."schoolId" = "School"."id" AND "Users"."isTeachingStaff" = false) AS INTEGER)'), 'nonTeachingStaffCount'],
+                    [Sequelize.literal('CAST((SELECT COUNT(*) FROM "SchoolTeachers" WHERE "SchoolTeachers"."schoolId" = "School"."id" AND "SchoolTeachers"."isTeachingStaff" = true) AS INTEGER)'), 'teachingStaffCount'],
+                    [Sequelize.literal('CAST((SELECT COUNT(*) FROM "SchoolTeachers" WHERE "SchoolTeachers"."schoolId" = "School"."id" AND "SchoolTeachers"."isTeachingStaff" = false) AS INTEGER)'), 'nonTeachingStaffCount'],
                 ];
             } else if (user instanceof User) {
-                // If it's a regular user, only return their school
-                where.id = user.schoolId;
+                // If it's a regular user, only return their schools
+                queryOptions.include = [{
+                    model: User,
+                    as: 'teachers',
+                    where: { id: user.id },
+                    attributes: ['id'],
+                    through: { attributes: [] },
+                }];
             }
         }
 
@@ -115,18 +137,38 @@ export default class SchoolService {
 
         // Check if the identifier is a UUID
         if (Validator.isUUID(identifier)) {
-            school = await School.findByPk(identifier);
+            school = await School.findByPk(identifier, {
+                include: [{
+                    model: User,
+                    as: 'teachers',
+                    through: { attributes: ['isTeachingStaff', 'classAssigned', 'isActive'] },
+                }],
+            });
         } else if (identifier.startsWith('EDH')) {
             // If it starts with 'EDH', assume it's a formatted school code
             const schoolId = await School.convertFormattedCodeToInteger(identifier);
             if (schoolId) {
-                school = await School.findOne({ where: { schoolCode: schoolId } });
+                school = await School.findOne({
+                    where: { schoolCode: schoolId },
+                    include: [{
+                        model: User,
+                        as: 'teachers',
+                        through: { attributes: ['isTeachingStaff', 'classAssigned', 'isActive'] },
+                    }],
+                });
             }
         } else {
             // Otherwise, try to parse it as a school code number
             const schoolCode = parseInt(identifier, 10);
             if (!isNaN(schoolCode)) {
-                school = await School.findOne({ where: { schoolCode } });
+                school = await School.findOne({
+                    where: { schoolCode },
+                    include: [{
+                        model: User,
+                        as: 'teachers',
+                        through: { attributes: ['isTeachingStaff', 'classAssigned', 'isActive'] },
+                    }],
+                });
             }
         }
 
