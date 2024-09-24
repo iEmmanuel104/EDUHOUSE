@@ -33,6 +33,11 @@ export default class SchoolController {
         const admin = (req as AdminAuthenticatedRequest).admin;
         const user = (req as AuthenticatedRequest).user;
 
+        // Add userId to queryData if it's a superadmin request
+        if (admin && admin.isSuperAdmin && req.query.userId) {
+            queryData.userId = req.query.userId as string;
+        }
+
         const { schools, count, totalPages } = await SchoolService.viewSchools(queryData, admin || user);
 
         res.status(200).json({
