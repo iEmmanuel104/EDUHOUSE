@@ -1,4 +1,4 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import SchoolService, { IViewSchoolsQuery, IViewSchoolAdminsQuery } from '../services/school.service';
 import { AdminAuthenticatedRequest, AuthenticatedRequest } from '../middlewares/authMiddleware';
 import { BadRequestError } from '../utils/customErrors';
@@ -28,9 +28,9 @@ export default class SchoolController {
         });
     }
 
-    static async getSchools(req: AdminAuthenticatedRequest, res: Response) {
+    static async getSchools(req: Request, res: Response) {
         const queryData: IViewSchoolsQuery = req.query;
-        const admin = req.admin;
+        const admin = (req as AdminAuthenticatedRequest).admin;
 
         const { schools, count, totalPages } = await SchoolService.viewSchools(queryData, admin);
 
