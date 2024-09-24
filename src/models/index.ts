@@ -2,6 +2,7 @@
 import { Sequelize } from 'sequelize-typescript';
 import { logger } from '../utils/logger';
 import { DB_CONFIG, NODE_ENV } from '../utils/constants';
+import { seedDefaultAdmin } from '../seeders/admin.seed';
 // import AwsClientConfig from '../clients/aws.config';
 
 // Function to create Sequelize instance with IAM auth token for production
@@ -76,7 +77,8 @@ async function initiateDB(): Promise<void> {
         logger.info(`Postgres Connection has been established successfully -- ${NODE_ENV}`);
 
         // Synchronize the database (you may want to add options like force: true to reset the database)
-        await Database.sync({ force: true });
+        await Database.sync({ alter: true });
+        await seedDefaultAdmin();
         logger.info('Database Sync Completed');
 
     } catch (error) {
