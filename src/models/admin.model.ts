@@ -50,6 +50,7 @@ export default class Admin extends Model<Admin | IAdmin> {
 }
 
 export interface IAdmin {
+    id?: string;
     name: string;
     email: string;
     isSuperAdmin?: boolean;
