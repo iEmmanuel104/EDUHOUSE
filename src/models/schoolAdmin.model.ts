@@ -41,29 +41,33 @@ export default class SchoolAdmin extends Model<SchoolAdmin | ISchoolAdmin> {
     @ForeignKey(() => School)
     @Column
         schoolId: number;
-    
+
     @Column({
-        type: DataType.ENUM,
-        values: Object.values(AdminRole),
+        type: DataType.ENUM(...Object.values(AdminRole)),
         allowNull: false,
         defaultValue: AdminRole.GUEST,
     })
         role: AdminRole;
 
     @Column({
-        type: DataType.ARRAY(DataType.ENUM(...Object.values(SchoolAdminPermissions))),
+        type: DataType.ARRAY(DataType.STRING),
         allowNull: true,
+        defaultValue: [],
+        get() {
+            const rawValue = this.getDataValue('restrictions') as string[];
+            return rawValue ? rawValue.map(v => v as SchoolAdminPermissions) : [];
+        },
         set(value: SchoolAdminPermissions[]) {
             if (Array.isArray(value)) {
                 const uniqueRestrictions = [...new Set(value)];
                 this.setDataValue('restrictions', uniqueRestrictions);
             } else {
-                this.setDataValue('restrictions', value);
+                this.setDataValue('restrictions', []);
             }
         },
     })
         restrictions: SchoolAdminPermissions[];
-    
+
     @BelongsTo(() => Admin)
         admin: Admin;
 
