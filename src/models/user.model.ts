@@ -81,17 +81,15 @@ export default class User extends Model<User | IUser> {
         type: DataType.STRING(14),
         unique: true,
         allowNull: false,
+        defaultValue: Sequelize.literal(`
+        CONCAT(
+            EXTRACT(YEAR FROM CURRENT_DATE)::TEXT,
+            LPAD(FLOOR(RANDOM() * 100000000)::TEXT, 8, '0'),
+            CHR((65 + FLOOR(RANDOM() * 26))::INTEGER),
+            CHR((65 + FLOOR(RANDOM() * 26))::INTEGER)
+        )
+    `),
     })
-    @Default(
-        Sequelize.literal(`
-            CONCAT(
-                EXTRACT(YEAR FROM CURRENT_DATE)::TEXT,
-                LPAD(FLOOR(RANDOM() * 100000000)::TEXT, 8, '0'),
-                CHR(65 + FLOOR(RANDOM() * 26))::TEXT,
-                CHR(65 + FLOOR(RANDOM() * 26))::TEXT
-            )
-        `)
-    )
         registrationNumber: string;
 
     @Column({ type: DataType.STRING })
