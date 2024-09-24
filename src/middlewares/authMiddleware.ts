@@ -7,7 +7,6 @@ import { logger } from '../utils/logger';
 import { AuthUtil, TokenCacheUtil } from '../utils/token';
 import AdminService from '../services/AdminServices/admin.service';
 import Admin from '../models/admin.model';
-import { ADMIN_EMAIL } from '../utils/constants';
 
 
 export interface AuthenticatedRequest extends Request {
@@ -123,18 +122,9 @@ export const adminAuth = function (tokenType: ENCRYPTEDTOKEN) {
             return next(new UnauthorizedError('You are not authorized to perform this action'));
         }
 
-        let emailToUse = (tokenData.authKey as string).toLowerCase().trim();
-        if ((tokenData.authKey as string) !== ADMIN_EMAIL) {
-            const admin = await AdminService.getAdminByEmail(tokenData.authKey as string);
-            emailToUse = admin.email;
-            (req as AdminAuthenticatedRequest).admin = admin;
-            (req as AdminAuthenticatedRequest).isSuperAdmin = admin.isSuperAdmin;
-        } else {
-            (req as AdminAuthenticatedRequest).isSuperAdmin = true;
-        }
-
-        (req as AdminAuthenticatedRequest).email = emailToUse;
-
+        const admin = await AdminService.getAdminByEmail(tokenData.authKey as string);
+        (req as AdminAuthenticatedRequest).admin = admin;
+        (req as AdminAuthenticatedRequest).isSuperAdmin = admin.isSuperAdmin;
 
         logger.authorized('User authorized');
 
