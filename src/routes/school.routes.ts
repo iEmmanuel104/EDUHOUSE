@@ -1,6 +1,6 @@
 import express, { Router } from 'express';
 import SchoolController from '../controllers/school.controller';
-import { AdminAuthenticatedController, adminAuth, AuthenticatedController, basicAuth } from '../middlewares/authMiddleware';
+import { AdminAuthenticatedController, adminAuth, AuthenticatedController, basicAuth, optionalAuth } from '../middlewares/authMiddleware';
 import { uploadMiddleware, UploadType } from '../middlewares/uploadMiddleware';
 
 const router: Router = express.Router();
@@ -11,7 +11,7 @@ const upload = uploadMiddleware(UploadType.Single, 'logo');
 router
     // School management routes
     .post('/', adminAuth('admin'), AdminAuthenticatedController(SchoolController.createSchool))
-    .get('/', adminAuth('admin'), AdminAuthenticatedController(SchoolController.getSchools))
+    .get('/', optionalAuth, SchoolController.getSchools)
     .get('/info', basicAuth('access'), AuthenticatedController(SchoolController.getSchool))
     .patch('/', basicAuth('access'), upload, AuthenticatedController(SchoolController.updateSchool))
     .delete('/', adminAuth('admin'), AdminAuthenticatedController(SchoolController.deleteSchool))
