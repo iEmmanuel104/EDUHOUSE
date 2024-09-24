@@ -1,12 +1,13 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import SchoolService, { IViewSchoolsQuery, IViewSchoolAdminsQuery } from '../services/school.service';
-import { AuthenticatedRequest } from '../middlewares/authMiddleware';
+import { AdminAuthenticatedRequest, AuthenticatedRequest } from '../middlewares/authMiddleware';
 
 export default class SchoolController {
-    static async createSchool(req: AuthenticatedRequest, res: Response) {
+    static async createSchool(req: AdminAuthenticatedRequest, res: Response) {
         const schoolData = req.body;
+        const adminId = req.admin.id;
 
-        const newSchool = await SchoolService.addSchool(schoolData);
+        const newSchool = await SchoolService.addSchool(schoolData, adminId);
 
         res.status(201).json({
             status: 'success',
@@ -17,10 +18,11 @@ export default class SchoolController {
         });
     }
 
-    static async getSchools(req: Request, res: Response) {
+    static async getSchools(req: AdminAuthenticatedRequest, res: Response) {
         const queryData: IViewSchoolsQuery = req.query;
+        const admin = req.admin;
 
-        const { schools, count, totalPages } = await SchoolService.viewSchools(queryData);
+        const { schools, count, totalPages } = await SchoolService.viewSchools(queryData, admin);
 
         res.status(200).json({
             status: 'success',
@@ -33,10 +35,10 @@ export default class SchoolController {
         });
     }
 
-    static async getSchool(req: Request, res: Response) {
-        const { id } = req.params;
+    static async getSchool(req: AuthenticatedRequest, res: Response) {
+        const { id } = req.query;
 
-        const school = await SchoolService.viewSingleSchool(id);
+        const school = await SchoolService.viewSingleSchool(id as string);
 
         res.status(200).json({
             status: 'success',
@@ -48,7 +50,7 @@ export default class SchoolController {
     }
 
     static async updateSchool(req: AuthenticatedRequest, res: Response) {
-        const { id } = req.params;
+        const { id } = req.query;
         const updateData = req.body;
 
         //         // eslint-disable-next-line no-undef
@@ -67,7 +69,7 @@ export default class SchoolController {
         //         }
 
 
-        const updatedSchool = await SchoolService.updateSchool(id, updateData);
+        const updatedSchool = await SchoolService.updateSchool(id as string, updateData);
 
         res.status(200).json({
             status: 'success',
@@ -79,9 +81,9 @@ export default class SchoolController {
     }
 
     static async deleteSchool(req: AuthenticatedRequest, res: Response) {
-        const { id } = req.params;
+        const { id } = req.query;
 
-        await SchoolService.deleteSchool(id);
+        await SchoolService.deleteSchool(id as string);
 
         res.status(200).json({
             status: 'success',
@@ -104,7 +106,7 @@ export default class SchoolController {
         });
     }
 
-    static async getSchoolAdmins(req: Request, res: Response) {
+    static async getSchoolAdmins(req: AuthenticatedRequest, res: Response) {
         const queryData: IViewSchoolAdminsQuery = req.query;
 
         const { schoolAdmins, count, totalPages } = await SchoolService.viewSchoolAdmins(queryData);
@@ -120,10 +122,10 @@ export default class SchoolController {
         });
     }
 
-    static async getSchoolAdmin(req: Request, res: Response) {
-        const { userId, schoolId } = req.params;
+    static async getSchoolAdmin(req: AuthenticatedRequest, res: Response) {
+        const { userId, schoolId } = req.query;
 
-        const schoolAdmin = await SchoolService.viewSingleSchoolAdmin(userId, schoolId);
+        const schoolAdmin = await SchoolService.viewSingleSchoolAdmin(userId as string, schoolId as string);
 
         res.status(200).json({
             status: 'success',
@@ -135,10 +137,10 @@ export default class SchoolController {
     }
 
     static async updateSchoolAdmin(req: AuthenticatedRequest, res: Response) {
-        const { userId, schoolId } = req.params;
+        const { userId, schoolId } = req.query;
         const updateData = req.body;
 
-        const updatedSchoolAdmin = await SchoolService.updateSchoolAdmin(userId, schoolId, updateData);
+        const updatedSchoolAdmin = await SchoolService.updateSchoolAdmin(userId as string, schoolId as string, updateData);
 
         res.status(200).json({
             status: 'success',
@@ -150,9 +152,9 @@ export default class SchoolController {
     }
 
     static async deleteSchoolAdmin(req: AuthenticatedRequest, res: Response) {
-        const { userId, schoolId } = req.params;
+        const { userId, schoolId } = req.query;
 
-        await SchoolService.deleteSchoolAdmin(userId, schoolId);
+        await SchoolService.deleteSchoolAdmin(userId as string, schoolId as string);
 
         res.status(200).json({
             status: 'success',
