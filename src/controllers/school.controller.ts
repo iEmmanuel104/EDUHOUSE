@@ -31,8 +31,9 @@ export default class SchoolController {
     static async getSchools(req: Request, res: Response) {
         const queryData: IViewSchoolsQuery = req.query;
         const admin = (req as AdminAuthenticatedRequest).admin;
+        const user = (req as AuthenticatedRequest).user;
 
-        const { schools, count, totalPages } = await SchoolService.viewSchools(queryData, admin);
+        const { schools, count, totalPages } = await SchoolService.viewSchools(queryData, admin || user);
 
         res.status(200).json({
             status: 'success',
