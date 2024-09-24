@@ -28,31 +28,31 @@ export default class Assessment extends Model<Assessment | IAssessment> {
     @PrimaryKey
     @Default(DataType.UUIDV4)
     @Column
-        id: string;
+    id: string;
 
     @Column({
         type: DataType.STRING,
         allowNull: false,
     })
-        name: string;
+    name: string;
 
     @Column({
         type: DataType.TEXT,
     })
-        description: string;
+    description: string;
 
     @Column({
         type: DataType.ARRAY(DataType.STRING),
         allowNull: false,
     })
-        categories: string[];
+    categories: string[];
 
     @ForeignKey(() => School)
     @Column
-        schoolId: number;
+    schoolId: number;
 
     @BelongsTo(() => School)
-        school: School;
+    school: School;
 
     @Column({
         type: DataType.ENUM,
@@ -60,17 +60,17 @@ export default class Assessment extends Model<Assessment | IAssessment> {
         allowNull: false,
         defaultValue: AssessmentTargetAudience.ALL,
     })
-        targetAudience: AssessmentTargetAudience;
+    targetAudience: AssessmentTargetAudience;
 
     @BelongsToMany(() => User, {
         through: () => AssessmentTaker,
         foreignKey: 'assessmentId',
         otherKey: 'userId',
     })
-        assignedUsers: User[];
+    assignedUsers: User[];
 
     @BelongsToMany(() => QuestionBank, () => AssessmentQuestion)
-        questions: QuestionBank[];
+    questions: QuestionBank[];
 }
 
 export interface IAssessment {
