@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import SchoolService, { IViewSchoolsQuery } from '../services/school.service';
+import SchoolService, { IViewSchoolsQuery, IViewSchoolAdminsQuery } from '../services/school.service';
 import { AuthenticatedRequest } from '../middlewares/authMiddleware';
 
 export default class SchoolController {
@@ -51,8 +51,6 @@ export default class SchoolController {
         const { id } = req.params;
         const updateData = req.body;
 
-        // const { firstName, lastName, otherName, displayImage, gender, isDeactivated } = req.body;
-
         //         // eslint-disable-next-line no-undef
         //         const file = req.file as Express.Multer.File | undefined;
         //         let url;
@@ -88,6 +86,77 @@ export default class SchoolController {
         res.status(200).json({
             status: 'success',
             message: 'School deleted successfully',
+            data: null,
+        });
+    }
+
+    static async addSchoolAdmin(req: AuthenticatedRequest, res: Response) {
+        const schoolAdminData = req.body;
+
+        const newSchoolAdmin = await SchoolService.addSchoolAdmin(schoolAdminData);
+
+        res.status(201).json({
+            status: 'success',
+            message: 'School Admin added successfully',
+            data: {
+                schoolAdmin: newSchoolAdmin,
+            },
+        });
+    }
+
+    static async getSchoolAdmins(req: Request, res: Response) {
+        const queryData: IViewSchoolAdminsQuery = req.query;
+
+        const { schoolAdmins, count, totalPages } = await SchoolService.viewSchoolAdmins(queryData);
+
+        res.status(200).json({
+            status: 'success',
+            message: 'School Admins retrieved successfully',
+            data: {
+                schoolAdmins,
+                count,
+                totalPages,
+            },
+        });
+    }
+
+    static async getSchoolAdmin(req: Request, res: Response) {
+        const { userId, schoolId } = req.params;
+
+        const schoolAdmin = await SchoolService.viewSingleSchoolAdmin(userId, schoolId);
+
+        res.status(200).json({
+            status: 'success',
+            message: 'School Admin retrieved successfully',
+            data: {
+                schoolAdmin,
+            },
+        });
+    }
+
+    static async updateSchoolAdmin(req: AuthenticatedRequest, res: Response) {
+        const { userId, schoolId } = req.params;
+        const updateData = req.body;
+
+        const updatedSchoolAdmin = await SchoolService.updateSchoolAdmin(userId, schoolId, updateData);
+
+        res.status(200).json({
+            status: 'success',
+            message: 'School Admin updated successfully',
+            data: {
+                schoolAdmin: updatedSchoolAdmin,
+            },
+        });
+    }
+
+    static async deleteSchoolAdmin(req: AuthenticatedRequest, res: Response) {
+        const { userId, schoolId } = req.params;
+
+        await SchoolService.deleteSchoolAdmin(userId, schoolId);
+
+        res.status(200).json({
+            status: 'success',
+            message: 'School Admin deleted successfully',
             data: null,
         });
     }
