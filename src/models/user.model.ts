@@ -4,7 +4,6 @@ import {
     IsEmail, IsUUID, PrimaryKey, Index, BeforeCreate, BeforeUpdate, BelongsToMany, ForeignKey,
 } from 'sequelize-typescript';
 import Password from './password.model';
-import { Sequelize } from 'sequelize';
 import UserSettings from './userSettings.model';
 import { FindOptions } from 'sequelize';
 import School from './school.model';
@@ -81,14 +80,6 @@ export default class User extends Model<User | IUser> {
         type: DataType.STRING(14),
         unique: true,
         allowNull: false,
-        defaultValue: Sequelize.literal(`
-        CONCAT(
-            EXTRACT(YEAR FROM CURRENT_DATE)::TEXT,
-            LPAD(FLOOR(RANDOM() * 100000000)::TEXT, 8, '0'),
-            CHR((65 + FLOOR(RANDOM() * 26))::INTEGER),
-            CHR((65 + FLOOR(RANDOM() * 26))::INTEGER)
-        )
-    `),
     })
         registrationNumber: string;
 
@@ -188,6 +179,15 @@ export default class User extends Model<User | IUser> {
         if (instance.changed('otherName') && instance.otherName) {
             instance.otherName = User.capitalizeFirstLetter(instance.otherName);
         }
+    }
+
+    @BeforeCreate
+    static async generateRegistrationNumber(instance: User) {
+        const year = new Date().getFullYear();
+        const randomNum = Math.floor(Math.random() * 100000000).toString().padStart(8, '0');
+        const randomChars = String.fromCharCode(65 + Math.floor(Math.random() * 26)) +
+            String.fromCharCode(65 + Math.floor(Math.random() * 26));
+        instance.registrationNumber = `${year}${randomNum}${randomChars}`;
     }
 
     @BelongsToMany(() => Assessment, {
