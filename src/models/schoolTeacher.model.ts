@@ -3,7 +3,7 @@ import User from './user.model';
 import School from './school.model';
 
 @Table
-export default class SchoolTeacher extends Model<SchoolTeacher> {
+export default class SchoolTeacher extends Model<SchoolTeacher | ISchoolTeacher> {
     @ForeignKey(() => School)
     @Column(DataType.INTEGER)
         schoolId: number;
