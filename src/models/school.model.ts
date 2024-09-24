@@ -56,7 +56,7 @@ export default class School extends Model<School | ISchool> {
 
     @Column({
         type: DataType.STRING,
-        allowNull: false,
+        allowNull: true,
     })
         logo: string;
 
