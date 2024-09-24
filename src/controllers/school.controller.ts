@@ -1,11 +1,21 @@
 import { Response } from 'express';
 import SchoolService, { IViewSchoolsQuery, IViewSchoolAdminsQuery } from '../services/school.service';
 import { AdminAuthenticatedRequest, AuthenticatedRequest } from '../middlewares/authMiddleware';
+import { BadRequestError } from '../utils/customErrors';
+import CloudinaryClientConfig from '../clients/cloudinary.config';
+import { ISchool } from '../models/school.model';
+import { ISchoolAdmin } from '../models/schoolAdmin.model';
 
 export default class SchoolController {
     static async createSchool(req: AdminAuthenticatedRequest, res: Response) {
-        const schoolData = req.body;
+        const { name, location, registrationId, isActive } = req.body;
         const adminId = req.admin.id;
+
+        if (!name || !location || !registrationId) {
+            throw new BadRequestError('Name, location, and registrationId are required');
+        }
+
+        const schoolData = { name, location, registrationId, isActive: isActive || false } as ISchool;
 
         const newSchool = await SchoolService.addSchool(schoolData, adminId);
 
@@ -38,6 +48,10 @@ export default class SchoolController {
     static async getSchool(req: AuthenticatedRequest, res: Response) {
         const { id } = req.query;
 
+        if (!id) {
+            throw new BadRequestError('School ID is required');
+        }
+
         const school = await SchoolService.viewSingleSchool(id as string);
 
         res.status(200).json({
@@ -51,23 +65,32 @@ export default class SchoolController {
 
     static async updateSchool(req: AuthenticatedRequest, res: Response) {
         const { id } = req.query;
-        const updateData = req.body;
+        const { name, location, registrationId, isActive } = req.body;
 
-        //         // eslint-disable-next-line no-undef
-        //         const file = req.file as Express.Multer.File | undefined;
-        //         let url;
-        //         if (file) {
-        //             const result = await CloudinaryClientConfig.uploadtoCloudinary({
-        //                 fileBuffer: file.buffer,
-        //                 id: req.user.id,
-        //                 name: file.originalname,
-        //                 type: 'image',
-        //             });
-        //             url = result.url as string;
-        //         } else if (displayImage) {
-        //             url = displayImage;
-        //         }
+        if (!id) {
+            throw new BadRequestError('School ID is required');
+        }
 
+        const updateData: Partial<ISchool> = {};
+        if (name) updateData.name = name;
+        if (location) updateData.location = location;
+        if (registrationId) updateData.registrationId = registrationId;
+        if (isActive !== undefined) updateData.isActive = isActive;
+
+        // Handle logo upload
+        // eslint-disable-next-line no-undef
+        const file = req.file as Express.Multer.File | undefined;
+        if (file) {
+            const result = await CloudinaryClientConfig.uploadtoCloudinary({
+                fileBuffer: file.buffer,
+                id: req.user.id,
+                name: file.originalname,
+                type: 'image',
+            });
+            updateData.logo = result.url as string;
+        } else if (req.body.logo) {
+            updateData.logo = req.body.logo;
+        }
 
         const updatedSchool = await SchoolService.updateSchool(id as string, updateData);
 
@@ -83,6 +106,10 @@ export default class SchoolController {
     static async deleteSchool(req: AuthenticatedRequest, res: Response) {
         const { id } = req.query;
 
+        if (!id) {
+            throw new BadRequestError('School ID is required');
+        }
+
         await SchoolService.deleteSchool(id as string);
 
         res.status(200).json({
@@ -93,7 +120,13 @@ export default class SchoolController {
     }
 
     static async addSchoolAdmin(req: AuthenticatedRequest, res: Response) {
-        const schoolAdminData = req.body;
+        const { adminId, schoolId, role, restrictions } = req.body;
+
+        if (!adminId || !schoolId || !role) {
+            throw new BadRequestError('AdminId, schoolId, and role are required');
+        }
+
+        const schoolAdminData = { adminId, schoolId, role, restrictions };
 
         const newSchoolAdmin = await SchoolService.addSchoolAdmin(schoolAdminData);
 
@@ -125,6 +158,10 @@ export default class SchoolController {
     static async getSchoolAdmin(req: AuthenticatedRequest, res: Response) {
         const { userId, schoolId } = req.query;
 
+        if (!userId || !schoolId) {
+            throw new BadRequestError('UserId and schoolId are required');
+        }
+
         const schoolAdmin = await SchoolService.viewSingleSchoolAdmin(userId as string, schoolId as string);
 
         res.status(200).json({
@@ -138,7 +175,15 @@ export default class SchoolController {
 
     static async updateSchoolAdmin(req: AuthenticatedRequest, res: Response) {
         const { userId, schoolId } = req.query;
-        const updateData = req.body;
+        const { role, restrictions } = req.body;
+
+        if (!userId || !schoolId) {
+            throw new BadRequestError('UserId and schoolId are required');
+        }
+
+        const updateData: Partial<ISchoolAdmin> = {};
+        if (role) updateData.role = role;
+        if (restrictions) updateData.restrictions = restrictions;
 
         const updatedSchoolAdmin = await SchoolService.updateSchoolAdmin(userId as string, schoolId as string, updateData);
 
@@ -153,6 +198,10 @@ export default class SchoolController {
 
     static async deleteSchoolAdmin(req: AuthenticatedRequest, res: Response) {
         const { userId, schoolId } = req.query;
+
+        if (!userId || !schoolId) {
+            throw new BadRequestError('UserId and schoolId are required');
+        }
 
         await SchoolService.deleteSchoolAdmin(userId as string, schoolId as string);
 
