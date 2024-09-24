@@ -5,6 +5,7 @@ import User from './user.model';
 import SchoolAdmin from './schoolAdmin.model';
 import Assessment from './evaluation/assessment.model';
 import Admin from './admin.model';
+import SchoolTeacher from './schoolTeacher.model';
 
 @Table
 export default class School extends Model<School | ISchool> {
@@ -61,7 +62,7 @@ export default class School extends Model<School | ISchool> {
         logo: string;
 
     // Associations
-    @HasMany(() => User, 'schoolId')
+    @BelongsToMany(() => User, () => SchoolTeacher)
         teachers: User[];
 
     @BelongsToMany(() => Admin, () => SchoolAdmin)
