@@ -132,8 +132,12 @@ export const adminAuth = function (tokenType: ENCRYPTEDTOKEN) {
 // Add custom middleware to allow optional authentication
 export const optionalAuth = (req: Request, res: Response, next: NextFunction) => {
     // check if the request has an authorization header and it is not an iAdmin request
-    if (req.headers.authorization && !req.headers['x-iadmin-access'] && req.headers['x-iadmin-access'] !== 'true') {
-        return basicAuth('access')(req, res, next);
+    if (req.headers.authorization) {
+        if ( !req.headers['x-iadmin-access'] && req.headers['x-iadmin-access'] !== 'true') {
+            return basicAuth('access')(req, res, next);
+        } else {
+            return adminAuth('admin')(req, res, next);
+        }
     }
     return next();
 };
