@@ -19,7 +19,7 @@ export default class AdminController {
             otpCode,
             name: firstName,
         };
-        
+
         // Send email with OTP
         await emailService.send({
             email: checkAdmin.email,
@@ -63,7 +63,7 @@ export default class AdminController {
     static async createAdmin(req: AdminAuthenticatedRequest, res: Response) {
         const { name, email, isSuperAdmin } = req.body;
 
-        if (req.isSuperAdmin === false) {
+        if (req.admin.isSuperAdmin === false) {
             throw new ForbiddenError('Only super admin can create new admins');
         }
 
@@ -78,7 +78,7 @@ export default class AdminController {
 
     static async getAllAdmins(req: AdminAuthenticatedRequest, res: Response) {
         // Check if the requester is the super admin
-        if (req.isSuperAdmin === false) {
+        if (req.admin.isSuperAdmin === false) {
             throw new ForbiddenError('Only super admin can view all admins');
         }
 
@@ -94,7 +94,7 @@ export default class AdminController {
     static async deleteAdmin(req: AdminAuthenticatedRequest, res: Response) {
         const { id } = req.query;
 
-        if (req.isSuperAdmin === false) {
+        if (req.admin.isSuperAdmin === false) {
             throw new ForbiddenError('Only super admin can delete admins');
         }
 
