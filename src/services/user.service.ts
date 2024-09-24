@@ -5,6 +5,7 @@ import Validator from '../utils/validators';
 import Pagination, { IPaging } from '../utils/pagination';
 import { Sequelize } from '../models';
 import UserSettings, { IUserSettings } from '../models/userSettings.model';
+import SchoolTeacher from '../models/schoolTeacher.model';
 export interface IViewUsersQuery {
     page?: number;
     size?: number;
@@ -194,5 +195,33 @@ export default class UserService {
 
     static async deleteUser(user: User, transaction?: Transaction): Promise<void> {
         transaction ? await user.destroy({ transaction }) : await user.destroy();
+    }
+
+    static async addTeacherToSchool(schoolId: number, teacherId: string, isTeachingStaff: boolean, classAssigned?: string): Promise<SchoolTeacher> {
+        const schoolTeacher = await SchoolTeacher.create({
+            schoolId,
+            teacherId,
+            isTeachingStaff,
+            classAssigned,
+            isActive: true, // Set as active by default when adding a teacher
+        });
+        return schoolTeacher;
+    }
+
+    static async updateTeacherInSchool(schoolId: string, teacherId: string, dataToUpdate: Partial<SchoolTeacher>): Promise<SchoolTeacher> {
+        const schoolTeacher = await SchoolTeacher.findOne({ where: { schoolId, teacherId } });
+        if (!schoolTeacher) {
+            throw new NotFoundError('Teacher not found in this school');
+        }
+        await schoolTeacher.update(dataToUpdate);
+        return schoolTeacher;
+    }
+
+    static async removeTeacherFromSchool(schoolId: string, teacherId: string): Promise<void> {
+        const schoolTeacher = await SchoolTeacher.findOne({ where: { schoolId, teacherId } });
+        if (!schoolTeacher) {
+            throw new NotFoundError('Teacher not found in this school');
+        }
+        await schoolTeacher.destroy();
     }
 }
