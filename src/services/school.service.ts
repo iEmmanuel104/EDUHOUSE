@@ -5,6 +5,7 @@ import Admin from '../models/admin.model';
 import { NotFoundError, UnauthorizedError } from '../utils/customErrors';
 import Pagination, { IPaging } from '../utils/pagination';
 import Validator from '../utils/validators';
+import User from '../models/user.model';
 
 export interface IViewSchoolsQuery {
     page?: number;
@@ -40,7 +41,10 @@ export default class SchoolService {
         return school;
     }
 
-    static async viewSchools(queryData: IViewSchoolsQuery, admin: Admin): Promise<{ schools: School[], count: number, totalPages?: number }> {
+    static async viewSchools(
+        queryData: IViewSchoolsQuery,
+        user?: Admin | User
+    ): Promise<{ schools: School[], count: number, totalPages?: number }> {
         const { page, size, q: query, isActive } = queryData;
 
         const where: Record<string | symbol, unknown> = {};
@@ -63,11 +67,18 @@ export default class SchoolService {
 
         const queryOptions: FindAndCountOptions<School> = { where };
 
-        // Filter schools based on admin permissions
-        if (!admin.isSuperAdmin) {
-            const adminSchools = await SchoolAdmin.findAll({ where: { adminId: admin.id } });
-            const schoolIds = adminSchools.map(as => as.schoolId);
-            where.id = { [Op.in]: schoolIds };
+        // Filter schools based on user type and permissions
+        if (user) {
+            if (user instanceof Admin) {
+                if (!user.isSuperAdmin) {
+                    const adminSchools = await SchoolAdmin.findAll({ where: { adminId: user.id } });
+                    const schoolIds = adminSchools.map(as => as.schoolId);
+                    where.id = { [Op.in]: schoolIds };
+                }
+            } else if (user instanceof User) {
+                // If it's a regular user, only return their school
+                where.id = user.schoolId;
+            }
         }
 
         if (page && size && page > 0 && size > 0) {
