@@ -254,14 +254,63 @@ export default class SchoolService {
         return schoolAdmin;
     }
 
-    static async updateSchoolAdmin(userId: string, schoolId: string, dataToUpdate: Partial<ISchoolAdmin>): Promise<SchoolAdmin> {
+    static async updateSchoolAdmin(
+        userId: string,
+        schoolId: string,
+        dataToUpdate: Partial<ISchoolAdmin>,
+        currentUser: Admin
+    ): Promise<SchoolAdmin> {
         const schoolAdmin = await this.viewSingleSchoolAdmin(userId, schoolId);
+
+        // Check if the current user has permission to update
+        if (
+            !currentUser.isSuperAdmin &&
+            !(await this.isSchoolOwner(currentUser.id, schoolId)) &&
+            !(currentUser.id === userId) // Allow self-update for school admins
+        ) {
+            throw new UnauthorizedError('You do not have permission to update this School Admin');
+        }
+
+        // If it's a self-update by a non-owner school admin, restrict certain updates
+        if (currentUser.id === userId && !(await this.isSchoolOwner(currentUser.id, schoolId))) {
+            // Prevent changing role or adding/removing restrictions
+            delete dataToUpdate.role;
+            delete dataToUpdate.restrictions;
+        }
+
         await schoolAdmin.update(dataToUpdate);
         return schoolAdmin;
     }
 
-    static async deleteSchoolAdmin(userId: string, schoolId: string, transaction?: Transaction): Promise<void> {
+    static async deleteSchoolAdmin(
+        userId: string,
+        schoolId: string,
+        currentUser: Admin,
+        transaction?: Transaction
+    ): Promise<void> {
         const schoolAdmin = await this.viewSingleSchoolAdmin(userId, schoolId);
+
+        // Check if the current user has permission to delete
+        if (
+            !currentUser.isSuperAdmin &&
+            !(await this.isSchoolOwner(currentUser.id, schoolId))
+        ) {
+            throw new UnauthorizedError('You do not have permission to delete this School Admin');
+        }
+
+        // Prevent school owners from deleting themselves
+        if (await this.isSchoolOwner(userId, schoolId)) {
+            throw new UnauthorizedError('School owners cannot be deleted');
+        }
+
         transaction ? await schoolAdmin.destroy({ transaction }) : await schoolAdmin.destroy();
+    }
+
+    // Helper method to check if a user is the owner of a school
+    private static async isSchoolOwner(userId: string, schoolId: string): Promise<boolean> {
+        const schoolAdmin = await SchoolAdmin.findOne({
+            where: { adminId: userId, schoolId, role: AdminRole.OWNER },
+        });
+        return !!schoolAdmin;
     }
 }
