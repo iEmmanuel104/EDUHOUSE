@@ -23,6 +23,8 @@ export enum SchoolAdminPermissions {
     DELETE_ASSESSMENT = 'delete_assessment',
     ADD_ASSESSMENT_TAKER = 'create_assessment_taker',
     REMOVE_ASSESSMENT_TAKER = 'update_assessment_taker',
+    UPDATE_SCHOOL_ADMIN = 'update_school_admin',
+    DELETE_SCHOOL_ADMIN = 'delete_school_admin',
 }
 
 @Scopes(() => ({
