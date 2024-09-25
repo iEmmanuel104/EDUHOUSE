@@ -65,7 +65,7 @@ export default class Assessment extends Model<Assessment | IAssessment> {
     @BelongsToMany(() => User, {
         through: () => AssessmentTaker,
         foreignKey: 'assessmentId',
-        otherKey: 'userId',
+        otherKey: 'teacherId',
     })
         assignedUsers: User[];
 
