@@ -43,19 +43,19 @@ export const basicAuth = function (tokenType: AuthToken) {
             return next(new UnauthorizedError('Invalid authorization header'));
 
         const jwtToken = authHeader.split(' ')[1];
-        // if (req.method === 'GET' && req.path === '/authtoken') {
-        //     const payload = (AuthUtil.verifyToken(jwtToken, tokenType)) as unknown as DecodedTokenData;
-        //     const user: User | null = await UserService.viewSingleUser(payload.user.id);
-        //     const accessToken = await AuthUtil.generateToken({ type: 'access', user });
+        if (req.method === 'GET' && req.path === '/authtoken') {
+            const payload = (AuthUtil.verifyToken(jwtToken, tokenType)) as unknown as DecodedTokenData;
+            const user: User | null = await UserService.viewSingleUser(payload.user.id);
+            const accessToken = await AuthUtil.generateToken({ type: 'access', user });
 
-        //     return res.status(200).json({
-        //         status: 'success',
-        //         message: 'Refresh successful',
-        //         data: {
-        //             accessToken,
-        //         },
-        //     });
-        // }
+            return res.status(200).json({
+                status: 'success',
+                message: 'Refresh successful',
+                data: {
+                    accessToken,
+                },
+            });
+        }
 
         const payload = AuthUtil.verifyToken(jwtToken, tokenType);
 
