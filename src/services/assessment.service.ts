@@ -3,6 +3,9 @@ import Assessment, { AssessmentTargetAudience, IAssessment } from '../models/eva
 import AssessmentTaker, { IAssessmentTaker, AssessmentTakerStatus } from '../models/evaluation/takers.model';
 import { NotFoundError } from '../utils/customErrors';
 import Pagination, { IPaging } from '../utils/pagination';
+import Admin from '../models/admin.model';
+import { SchoolAdminPermissions } from '../models/schoolAdmin.model';
+import SchoolService from './school.service';
 
 export interface IViewAssessmentsQuery {
     page?: number;
@@ -21,7 +24,10 @@ export interface IViewAssessmentTakersQuery {
 }
 
 export default class AssessmentService {
-    static async addAssessment(assessmentData: IAssessment): Promise<Assessment> {
+    static async addAssessment(assessmentData: IAssessment, user?: Admin): Promise<Assessment> {
+        if (user) {
+            await SchoolService.viewSingleSchool((assessmentData.schoolId).toString(), user, SchoolAdminPermissions.CREATE_ASSESSMENT);
+        }
         const assessment = await Assessment.create({ ...assessmentData });
         return assessment;
     }
@@ -74,21 +80,30 @@ export default class AssessmentService {
         return assessment;
     }
 
-    static async updateAssessment(id: string, dataToUpdate: Partial<IAssessment>): Promise<Assessment> {
+    static async updateAssessment(id: string, dataToUpdate: Partial<IAssessment>, user?: Admin): Promise<Assessment> {
         const assessment = await this.viewSingleAssessment(id);
+        if (user) {
+            await SchoolService.viewSingleSchool((assessment.schoolId).toString(), user, SchoolAdminPermissions.UPDATE_ASSESSMENT);
+        }
         await assessment.update(dataToUpdate);
         return assessment;
     }
 
-    static async deleteAssessment(id: string, transaction?: Transaction): Promise<void> {
+    static async deleteAssessment(id: string, user?: Admin, transaction?: Transaction): Promise<void> {
         const assessment = await this.viewSingleAssessment(id);
+        if (user) {
+            await SchoolService.viewSingleSchool((assessment.schoolId).toString(), user, SchoolAdminPermissions.DELETE_ASSESSMENT);
+        }
         transaction ? await assessment.destroy({ transaction }) : await assessment.destroy();
     }
 
 
     // assess,emt taker
-
-    static async addAssessmentTaker(takerData: IAssessmentTaker): Promise<AssessmentTaker> {
+    static async addAssessmentTaker(takerData: IAssessmentTaker, user?: Admin ): Promise<AssessmentTaker> {
+        const assessment = await this.viewSingleAssessment(takerData.assessmentId);
+        if (user) {
+            await SchoolService.viewSingleSchool((assessment.schoolId).toString(), user, SchoolAdminPermissions.ADD_ASSESSMENT_TAKER);
+        }
         const taker = await AssessmentTaker.create({ ...takerData });
         return taker;
     }
@@ -144,8 +159,12 @@ export default class AssessmentService {
         return taker;
     }
 
-    static async deleteAssessmentTaker(id: string, transaction?: Transaction): Promise<void> {
+    static async deleteAssessmentTaker(id: string, user?: Admin, transaction?: Transaction ): Promise<void> {
         const taker = await this.viewSingleAssessmentTaker(id);
+        const assessment = await this.viewSingleAssessment(taker.assessmentId);
+        if (user) {
+            await SchoolService.viewSingleSchool((assessment.schoolId).toString(), user, SchoolAdminPermissions.REMOVE_ASSESSMENT_TAKER);
+        }
         transaction ? await taker.destroy({ transaction }) : await taker.destroy();
     }
 }
