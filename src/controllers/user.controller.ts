@@ -1,13 +1,13 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import UserService from '../services/user.service';
 import { BadRequestError } from '../utils/customErrors';
-import { AuthenticatedRequest } from '../middlewares/authMiddleware';
+import { AdminAuthenticatedRequest, AuthenticatedRequest } from '../middlewares/authMiddleware';
 import CloudinaryClientConfig from '../clients/cloudinary.config';
 import SchoolTeacher from '../models/schoolTeacher.model';
 
 export default class UserController {
 
-    static async getAllUsers(req: AuthenticatedRequest, res: Response) {
+    static async getAllUsers(req: AdminAuthenticatedRequest, res: Response) {
         const { page, size, q, isBlocked, isDeactivated, schoolId } = req.query;
         const queryParams: Record<string, unknown> = {};
 
@@ -40,7 +40,7 @@ export default class UserController {
         });
     }
 
-    static async getUser(req: AuthenticatedRequest, res: Response) {
+    static async getUser(req: Request, res: Response) {
         const { id } = req.query;
 
         const user = await UserService.viewSingleUser(id as string);
