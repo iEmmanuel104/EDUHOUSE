@@ -202,13 +202,48 @@ export default class SchoolService {
         transaction ? await school.destroy({ transaction }) : await school.destroy();
     }
 
-    static async addSchoolAdmin(schoolAdminData: ISchoolAdmin & { restrictions?: SchoolAdminPermissions[] }): Promise<SchoolAdmin> {
-        const { restrictions, ...data } = schoolAdminData;
-        const schoolAdmin = await SchoolAdmin.create({
-            ...data,
-            restrictions: restrictions || [],
+    static async createOrUpdateSchoolAdmin(
+        adminId: string,
+        schoolId: string,
+        data: Partial<ISchoolAdmin>,
+        currentUser: Admin
+    ): Promise<{ schoolAdmin: SchoolAdmin; created: boolean }> {
+        // Check if the current user has permission
+        if (!currentUser.isSuperAdmin && !(await this.isSchoolOwner(currentUser.id, schoolId))) {
+            throw new UnauthorizedError('You do not have permission to manage School Admins');
+        }
+
+        const [schoolAdmin, created] = await SchoolAdmin.findOrCreate({
+            where: { adminId, schoolId },
+            defaults: {
+                adminId,
+                schoolId: parseInt(schoolId, 10),
+                role: data.role || AdminRole.ADMIN,
+                restrictions: data.restrictions || [],
+            },
         });
-        return schoolAdmin;
+
+        if (!created) {
+            // If updating, check additional permissions
+            if (
+                !currentUser.isSuperAdmin &&
+                !(await this.isSchoolOwner(currentUser.id, schoolId)) &&
+                !(currentUser.id === adminId)
+            ) {
+                throw new UnauthorizedError('You do not have permission to update this School Admin');
+            }
+
+            // If it's a self-update by a non-owner school admin, restrict certain updates
+            if (currentUser.id === adminId && !(await this.isSchoolOwner(currentUser.id, schoolId))) {
+                delete data.role;
+                delete data.restrictions;
+            }
+
+            // Update the existing record
+            await schoolAdmin.update(data);
+        }
+
+        return { schoolAdmin, created };
     }
 
     static async viewSchoolAdmins(queryData?: IViewSchoolAdminsQuery): Promise<{ schoolAdmins: SchoolAdmin[], count: number, totalPages?: number }> {
@@ -254,40 +289,7 @@ export default class SchoolService {
         return schoolAdmin;
     }
 
-    static async updateSchoolAdmin(
-        userId: string,
-        schoolId: string,
-        dataToUpdate: Partial<ISchoolAdmin>,
-        currentUser: Admin
-    ): Promise<SchoolAdmin> {
-        const schoolAdmin = await this.viewSingleSchoolAdmin(userId, schoolId);
-
-        // Check if the current user has permission to update
-        if (
-            !currentUser.isSuperAdmin &&
-            !(await this.isSchoolOwner(currentUser.id, schoolId)) &&
-            !(currentUser.id === userId) // Allow self-update for school admins
-        ) {
-            throw new UnauthorizedError('You do not have permission to update this School Admin');
-        }
-
-        // If it's a self-update by a non-owner school admin, restrict certain updates
-        if (currentUser.id === userId && !(await this.isSchoolOwner(currentUser.id, schoolId))) {
-            // Prevent changing role or adding/removing restrictions
-            delete dataToUpdate.role;
-            delete dataToUpdate.restrictions;
-        }
-
-        await schoolAdmin.update(dataToUpdate);
-        return schoolAdmin;
-    }
-
-    static async deleteSchoolAdmin(
-        userId: string,
-        schoolId: string,
-        currentUser: Admin,
-        transaction?: Transaction
-    ): Promise<void> {
+    static async deleteSchoolAdmin(userId: string, schoolId: string, currentUser: Admin, transaction?: Transaction): Promise<void> {
         const schoolAdmin = await this.viewSingleSchoolAdmin(userId, schoolId);
 
         // Check if the current user has permission to delete
