@@ -113,7 +113,7 @@ export default class UserController {
 
 
     static async addTeacherToSchool(req: AdminAuthenticatedRequest, res: Response) {
-        const { schoolId, teacherId, isTeachingStaff, classAssigned } = req.body;
+        const { schoolId, teacherId, isTeachingStaff, isActive, classAssigned } = req.body;
 
         if (!schoolId || !teacherId) {
             throw new BadRequestError('SchoolId and teacherId are required');
@@ -121,7 +121,7 @@ export default class UserController {
         
         const admin = (req as AdminAuthenticatedRequest).admin;
 
-        const newSchoolTeacher = await UserService.addOrUpdateTeacherInSchool(schoolId, teacherId, isTeachingStaff, classAssigned, admin);
+        const newSchoolTeacher = await UserService.addOrUpdateTeacherInSchool(schoolId, teacherId, isTeachingStaff, isActive, classAssigned, admin);
 
         res.status(201).json({
             status: 'success',
