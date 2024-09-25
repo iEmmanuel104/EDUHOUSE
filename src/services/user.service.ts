@@ -176,7 +176,6 @@ export default class UserService {
         }
     }
 
-
     static async viewSingleUser(id: string): Promise<User> {
         const user: User | null = await User.scope('withSettings').findByPk(id);
 
