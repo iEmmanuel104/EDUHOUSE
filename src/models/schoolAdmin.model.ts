@@ -12,7 +12,6 @@ export enum AdminRole {
 }
 
 export enum SchoolAdminPermissions {
-    CREATE_SCHOOL = 'create_school',
     UPDATE_SCHOOL = 'update_school',
     DELETE_SCHOOL = 'delete_school',
     DISABLE_SCHOOL = 'disable_school',
