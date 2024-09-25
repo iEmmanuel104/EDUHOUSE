@@ -12,7 +12,6 @@ router
     .get('/', adminAuth('admin'), AdminAuthenticatedController(UserController.getAllUsers))
     .get('/info', optionalAuth, UserController.getUser)
     .patch('/update', basicAuth('access'), upload, AuthenticatedController(UserController.updateUser))
-    .post('/add-to-schoool', adminAuth('admin'), AdminAuthenticatedController(UserController.addTeacherToSchool))
     .delete('/remove-from-school', adminAuth('admin'), AdminAuthenticatedController(UserController.removeTeacherFromSchool));
 
 export default router;
