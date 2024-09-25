@@ -176,8 +176,8 @@ export default class UserService {
         }
     }
 
-    static async viewSingleUser(id: string): Promise<User> {
-        const user: User | null = await User.scope('withSettings').findByPk(id);
+    static async viewSingleUser(id: string, transaction?: Transaction): Promise<User> {
+        const user: User | null = await User.scope('withSettings').findByPk(id, { transaction });
 
         if (!user) {
             throw new NotFoundError('Oops User not found');
