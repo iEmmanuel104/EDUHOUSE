@@ -1,6 +1,6 @@
 import express, { Router } from 'express';
 import UserController from '../controllers/user.controller';
-import { AuthenticatedController, basicAuth } from '../middlewares/authMiddleware';
+import { adminAuth, AdminAuthenticatedController, AuthenticatedController, basicAuth, optionalAuth } from '../middlewares/authMiddleware';
 import { uploadMiddleware, UploadType } from '../middlewares/uploadMiddleware';
 
 const router: Router = express.Router();
@@ -9,9 +9,12 @@ const router: Router = express.Router();
 const upload = uploadMiddleware(UploadType.Single, 'file');
 
 router
-//     .get('/', adminAuth('admin'), AuthenticatedController(UserController.getAllUsers))
-    // .get('/info', adminAuth('admin'), AuthenticatedController(UserController.getUser))
-    .patch('/update', basicAuth('access'), upload, AuthenticatedController(UserController.updateUser));
-    
+    .get('/', adminAuth('admin'), AdminAuthenticatedController(UserController.getAllUsers))
+    .get('/info', optionalAuth, UserController.getUser)
+    .patch('/update', basicAuth('access'), upload, AuthenticatedController(UserController.updateUser))
+    .post('/addtoschoool', adminAuth('admin'), AdminAuthenticatedController(UserController.addTeacherToSchool))
+    .patch('/updateinschool', adminAuth('admin'), AdminAuthenticatedController(UserController.updateTeacherInSchool))
+    .delete('/removefromschool', adminAuth('admin'), AdminAuthenticatedController(UserController.removeTeacherFromSchool));
+
 export default router;
 
