@@ -5,7 +5,6 @@ import Admin from '../models/admin.model';
 import User from '../models/user.model';
 import { NotFoundError, UnauthorizedError } from '../utils/customErrors';
 import Pagination, { IPaging } from '../utils/pagination';
-import Validator from '../utils/validators';
 
 export interface IViewSchoolsQuery {
     page?: number;
@@ -133,44 +132,27 @@ export default class SchoolService {
     }
 
     static async viewSingleSchool(identifier: string): Promise<School> {
-        let school: School | null = null;
 
-        // Check if the identifier is a UUID
-        if (Validator.isUUID(identifier)) {
-            school = await School.findByPk(identifier, {
-                include: [{
-                    model: User,
-                    as: 'teachers',
-                    through: { attributes: ['isTeachingStaff', 'classAssigned', 'isActive'] },
-                }],
-            });
-        } else if (identifier.startsWith('EDH')) {
+        let schoolId: number | null;
+        if (identifier.startsWith('EDH')) {
             // If it starts with 'EDH', assume it's a formatted school code
-            const schoolId = await School.convertFormattedCodeToInteger(identifier);
-            if (schoolId) {
-                school = await School.findOne({
-                    where: { schoolCode: schoolId },
-                    include: [{
-                        model: User,
-                        as: 'teachers',
-                        through: { attributes: ['isTeachingStaff', 'classAssigned', 'isActive'] },
-                    }],
-                });
+            const schoolIdValue = await School.convertFormattedCodeToInteger(identifier);    
+            if (!schoolIdValue) {
+                throw new NotFoundError('Invalid school code');
             }
+            schoolId = schoolIdValue;
         } else {
             // Otherwise, try to parse it as a school code number
-            const schoolCode = parseInt(identifier, 10);
-            if (!isNaN(schoolCode)) {
-                school = await School.findOne({
-                    where: { schoolCode },
-                    include: [{
-                        model: User,
-                        as: 'teachers',
-                        through: { attributes: ['isTeachingStaff', 'classAssigned', 'isActive'] },
-                    }],
-                });
-            }
+            schoolId = parseInt(identifier, 10);
         }
+
+        const school = await School.findByPk(schoolId, {
+            include: [{
+                model: User,
+                as: 'teachers',
+                through: { attributes: ['isTeachingStaff', 'classAssigned', 'isActive'] },
+            }],
+        });
 
         if (!school) {
             throw new NotFoundError('School not found');

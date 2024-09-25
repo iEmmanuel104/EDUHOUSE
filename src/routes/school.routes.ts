@@ -12,7 +12,7 @@ router
     // School management routes
     .post('/', adminAuth('admin'), AdminAuthenticatedController(SchoolController.createSchool))
     .get('/', optionalAuth, SchoolController.getSchools)
-    .get('/info', basicAuth('access'), AuthenticatedController(SchoolController.getSchool))
+    .get('/info', AuthenticatedController(SchoolController.getSchool))
     .patch('/', basicAuth('access'), upload, AuthenticatedController(SchoolController.updateSchool))
     .delete('/', adminAuth('admin'), AdminAuthenticatedController(SchoolController.deleteSchool))
 
