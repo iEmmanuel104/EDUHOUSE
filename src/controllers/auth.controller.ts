@@ -13,7 +13,7 @@ import { ISchoolTeacher } from '../models/schoolTeacher.model';
 export default class AuthController {
 
     static async signup(req: Request, res: Response) {
-        const { email, firstName, lastName, schoolId, displayImage, gender, isTeachingStaff, classAssigned, phone } = req.body;
+        const { email, firstName, lastName, schoolId, displayImage, gender, phone, isTeachingStaff, isActive, classAssigned } = req.body;
 
         const userData = {
             email,
@@ -36,7 +36,7 @@ export default class AuthController {
                 schoolId,
                 isTeachingStaff: isTeachingStaff || false,
                 classAssigned,
-                isActive: true, // or set this based on your logic
+                isActive: isActive || false,
             }
             : undefined;
 
