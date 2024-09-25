@@ -48,7 +48,7 @@ export default class AuthController {
                 status: 'success',
                 message: 'User updated successfully',
                 data: {
-                    user,
+                    teacher: user,
                 },
             });
             return;
@@ -73,7 +73,7 @@ export default class AuthController {
                 status: 'success',
                 message: 'User created successfully by admin',
                 data: {
-                    user,
+                    teacher: user,
                 },
             });
             return;
@@ -104,7 +104,7 @@ export default class AuthController {
             status: 'success',
             message: 'Email verification code sent successfully',
             data: {
-                user,
+                teacher: user,
             },
         });
     }
@@ -142,7 +142,7 @@ export default class AuthController {
                 status: 'success',
                 message: 'Email verified successfully',
                 data: {
-                    user: updatedUser,
+                    teacher: updatedUser,
                     accessToken,
                     refreshToken,
                 },
@@ -252,7 +252,7 @@ export default class AuthController {
             status: 'success',
             message: 'Login successful',
             data: {
-                user: user.dataValues,
+                teacher: user.dataValues,
                 accessToken,
                 refreshToken,
             },
@@ -278,7 +278,7 @@ export default class AuthController {
             status: 'success',
             message: 'user data retrieved successfully',
             data: {
-                user: user.dataValues,
+                teacher: user.dataValues,
             },
         });
     }
