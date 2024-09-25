@@ -203,7 +203,7 @@ export default class User extends Model<User | IUser> {
 
     @BelongsToMany(() => Assessment, {
         through: () => AssessmentTaker,
-        foreignKey: 'userId',
+        foreignKey: 'teacherId',
         otherKey: 'assessmentId',
     })
         assessments: Assessment[];
