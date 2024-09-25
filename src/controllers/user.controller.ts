@@ -8,7 +8,7 @@ import SchoolTeacher from '../models/schoolTeacher.model';
 export default class UserController {
 
     static async getAllUsers(req: AuthenticatedRequest, res: Response) {
-        const { page, size, q, isBlocked, isDeactivated } = req.query;
+        const { page, size, q, isBlocked, isDeactivated, schoolId } = req.query;
         const queryParams: Record<string, unknown> = {};
 
         if (page && size) {
@@ -16,7 +16,6 @@ export default class UserController {
             queryParams.size = Number(size);
         }
 
-        // Add filters for blocked and deactivated users
         if (isBlocked !== undefined) {
             queryParams.isBlocked = isBlocked === 'true';
         }
@@ -25,9 +24,12 @@ export default class UserController {
             queryParams.isDeactivated = isDeactivated === 'true';
         }
 
-        // Add search query if provided
         if (q) {
             queryParams.q = q as string;
+        }
+
+        if (schoolId) {
+            queryParams.schoolId = Number(schoolId);
         }
 
         const users = await UserService.viewUsers(queryParams);
