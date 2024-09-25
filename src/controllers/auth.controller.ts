@@ -353,6 +353,7 @@ export default class AuthController {
         }
 
         const accessToken = await AuthUtil.generateToken({ type: 'access', user });
+        const refreshToken = await AuthUtil.generateToken({ type: 'refresh', user });
 
         // // update the last Login for the user
         await UserService.updateUserSettings(user.id, { lastLogin: new Date() });
@@ -363,6 +364,7 @@ export default class AuthController {
             data: {
                 teacher: user.dataValues,
                 accessToken,
+                refreshToken,
             },
         });
     }
