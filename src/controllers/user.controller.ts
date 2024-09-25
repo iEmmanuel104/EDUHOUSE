@@ -27,7 +27,15 @@ export default class UserController {
             queryParams.q = q as string;
         }
 
-        if (schoolId) {
+        // Handle schoolId based on admin type
+        if (req.admin.isSuperAdmin) {
+            if (schoolId) {
+                queryParams.schoolId = Number(schoolId);
+            }
+        } else {
+            if (!schoolId) {
+                throw new BadRequestError('SchoolId is required for non-super admins');
+            }
             queryParams.schoolId = Number(schoolId);
         }
 
@@ -41,6 +49,10 @@ export default class UserController {
 
     static async getUser(req: Request, res: Response) {
         const { id } = req.query;
+
+        if (!id) {
+            throw new BadRequestError('Teacher ID is required');
+        }
 
         const user = await UserService.viewSingleUser(id as string);
 
