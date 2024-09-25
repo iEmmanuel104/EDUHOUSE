@@ -7,6 +7,9 @@ import { Sequelize } from '../models';
 import UserSettings, { IUserSettings } from '../models/userSettings.model';
 import SchoolTeacher, { ISchoolTeacher } from '../models/schoolTeacher.model';
 import School from '../models/school.model';
+import Admin from '../models/admin.model';
+import SchoolService from './school.service';
+import { SchoolAdminPermissions } from '../models/schoolAdmin.model';
 export interface IViewUsersQuery {
     page?: number;
     size?: number;
@@ -236,7 +239,10 @@ export default class UserService {
         transaction ? await user.destroy({ transaction }) : await user.destroy();
     }
 
-    static async addOrUpdateTeacherInSchool(schoolId: number, teacherId: string, isTeachingStaff: boolean, classAssigned?: string): Promise<SchoolTeacher> {
+    static async addOrUpdateTeacherInSchool(schoolId: number, teacherId: string, isTeachingStaff: boolean, classAssigned?: string, user?: Admin): Promise<SchoolTeacher> {
+        if (user) {
+            await SchoolService.viewSingleSchool(schoolId.toString(), user, SchoolAdminPermissions.CREATE_TEACHER);
+        }
         const [schoolTeacher, created] = await SchoolTeacher.findOrCreate({
             where: { schoolId, teacherId },
             defaults: {
@@ -249,6 +255,9 @@ export default class UserService {
         });
 
         if (!created) {
+            if (user) {
+                await SchoolService.viewSingleSchool(schoolId.toString(), user, SchoolAdminPermissions.UPDATE_TEACHER);
+            }
             await schoolTeacher.update({
                 isTeachingStaff,
                 classAssigned,
@@ -270,20 +279,15 @@ export default class UserService {
         return schoolTeacher;
     }
 
-    static async updateTeacherInSchool(schoolId: string, teacherId: string, dataToUpdate: Partial<SchoolTeacher>): Promise<SchoolTeacher> {
-        const schoolTeacher = await SchoolTeacher.findOne({ where: { schoolId, teacherId } });
-        if (!schoolTeacher) {
-            throw new NotFoundError('Teacher not found in this school');
+    static async removeTeacherFromSchool(schoolId: string, teacherId: string, user?: Admin): Promise<void> {
+        if (user) {
+            await SchoolService.viewSingleSchool(schoolId, user, SchoolAdminPermissions.DELETE_TEACHER);
         }
-        await schoolTeacher.update(dataToUpdate);
-        return schoolTeacher;
-    }
-
-    static async removeTeacherFromSchool(schoolId: string, teacherId: string): Promise<void> {
         const schoolTeacher = await SchoolTeacher.findOne({ where: { schoolId, teacherId } });
         if (!schoolTeacher) {
             throw new NotFoundError('Teacher not found in this school');
         }
         await schoolTeacher.destroy();
     }
+
 }
