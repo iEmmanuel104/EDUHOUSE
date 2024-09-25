@@ -6,7 +6,7 @@ import { logger } from '../utils/logger';
 import { Database } from '../models/index';
 import { emailService, EmailTemplate } from '../utils/Email';
 import UserService, { IDynamicQueryOptions } from '../services/user.service';
-import { AuthenticatedRequest } from '../middlewares/authMiddleware';
+import { AdminAuthenticatedRequest, AuthenticatedRequest } from '../middlewares/authMiddleware';
 import { Transaction } from 'sequelize';
 import { ISchoolTeacher } from '../models/schoolTeacher.model';
 
@@ -43,10 +43,35 @@ export default class AuthController {
         const { user, isNewUser } = await UserService.addOrUpdateUser(userData, schoolData);
 
         if (!isNewUser) {
-            // If the user already exists, just add or update them in the school
+            // If the user already exists, update the message
             res.status(200).json({
                 status: 'success',
-                message: 'User added or updated in school successfully',
+                message: 'User updated successfully',
+                data: {
+                    user,
+                },
+            });
+            return;
+        }
+
+        // Check if the request is made by an admin
+        const isAdminRequest = req as AdminAuthenticatedRequest && (req as AdminAuthenticatedRequest).admin;
+
+        if (isNewUser && isAdminRequest) {
+            // If it's a new user and the request is made by an admin, create without sending OTP
+            await user.update({
+                status: { ...user.status, emailVerified: true, activated: true },
+            });
+
+            // password is the user's lastname in lowercase
+            const password = user.lastName.toLowerCase();
+
+            // Create a new password for the user
+            await Password.create({ userId: user.id, password: password });
+
+            res.status(201).json({
+                status: 'success',
+                message: 'User created successfully by admin',
                 data: {
                     user,
                 },
