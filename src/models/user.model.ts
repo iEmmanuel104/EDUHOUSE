@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
 import {
-    Table, Column, Model, DataType, HasOne, Default, BeforeFind, Scopes,
-    IsEmail, IsUUID, PrimaryKey, Index, BeforeCreate, BeforeUpdate, BelongsToMany, ForeignKey,
+    Table, Column, Model, DataType, HasOne, Default, BeforeFind, Scopes, BeforeValidate,
+    IsEmail, IsUUID, PrimaryKey, Index, BeforeCreate, BeforeUpdate, BelongsToMany,
 } from 'sequelize-typescript';
 import Password from './password.model';
 import UserSettings from './userSettings.model';
@@ -10,6 +10,7 @@ import School from './school.model';
 import Assessment from './evaluation/assessment.model';
 import AssessmentTaker from './evaluation/takers.model';
 import SchoolTeacher from './schoolTeacher.model';
+import { BadRequestError } from '../utils/customErrors';
 
 @Scopes(() => ({
     withSettings: {
@@ -100,19 +101,6 @@ export default class User extends Model<User | IUser> {
     };
 
     @Column({
-        type: DataType.BOOLEAN,
-        allowNull: false,
-        defaultValue: true,
-    })
-        isTeachingStaff: boolean;
-
-    @Column({
-        type: DataType.STRING,
-        allowNull: false,
-    })
-        classAssigned: string;
-
-    @Column({
         type: DataType.VIRTUAL,
         get() {
             if (this.getDataValue('otherName')) {
@@ -136,7 +124,7 @@ export default class User extends Model<User | IUser> {
     };
 
     @Column({
-        type: DataType.DATEONLY,
+        type: DataType.DATEONLY, // YYYY-MM-DD
         validate: {
             isDate: true,
             isValidDate(value: string | Date) {
@@ -147,11 +135,6 @@ export default class User extends Model<User | IUser> {
         },
     })
         dob: Date;
-
-
-    @ForeignKey(() => School)
-    @Column
-        schoolId: number;
 
     // Associations
     @HasOne(() => Password)
@@ -185,13 +168,37 @@ export default class User extends Model<User | IUser> {
         }
     }
 
-    @BeforeCreate
+    @BeforeValidate
     static async generateRegistrationNumber(instance: User) {
-        const year = new Date().getFullYear();
-        const randomNum = Math.floor(Math.random() * 100000000).toString().padStart(8, '0');
-        const randomChars = String.fromCharCode(65 + Math.floor(Math.random() * 26)) +
-            String.fromCharCode(65 + Math.floor(Math.random() * 26));
-        instance.registrationNumber = `${year}${randomNum}${randomChars}`;
+        if (!instance.registrationNumber) {
+            const year = new Date().getFullYear();
+            const randomNum = Math.floor(Math.random() * 100000000).toString().padStart(8, '0');
+            const randomChars = String.fromCharCode(65 + Math.floor(Math.random() * 26)) +
+                String.fromCharCode(65 + Math.floor(Math.random() * 26));
+            instance.registrationNumber = `${year}${randomNum}${randomChars}`;
+
+            // Ensure uniqueness
+            let isUnique = false;
+            let attempts = 0;
+            const maxAttempts = 3; // Prevent infinite loop
+            while (!isUnique && attempts < maxAttempts) {
+                const existingUser = await User.findOne({ where: { registrationNumber: instance.registrationNumber } });
+                if (!existingUser) {
+                    isUnique = true;
+                } else {
+                    // If not unique, generate a new number
+                    const newRandomNum = Math.floor(Math.random() * 100000000).toString().padStart(8, '0');
+                    const newRandomChars = String.fromCharCode(65 + Math.floor(Math.random() * 26)) +
+                        String.fromCharCode(65 + Math.floor(Math.random() * 26));
+                    instance.registrationNumber = `${year}${newRandomNum}${newRandomChars}`;
+                }
+                attempts++;
+            }
+
+            if (!isUnique) {
+                throw new BadRequestError('Error generating registration number, please try again');
+            }
+        }
     }
 
     @BelongsToMany(() => Assessment, {
