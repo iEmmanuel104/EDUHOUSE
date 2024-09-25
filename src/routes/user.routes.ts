@@ -12,9 +12,9 @@ router
     .get('/', adminAuth('admin'), AdminAuthenticatedController(UserController.getAllUsers))
     .get('/info', optionalAuth, UserController.getUser)
     .patch('/update', basicAuth('access'), upload, AuthenticatedController(UserController.updateUser))
-    .post('/addtoschoool', adminAuth('admin'), AdminAuthenticatedController(UserController.addTeacherToSchool))
-    .patch('/updateinschool', adminAuth('admin'), AdminAuthenticatedController(UserController.updateTeacherInSchool))
-    .delete('/removefromschool', adminAuth('admin'), AdminAuthenticatedController(UserController.removeTeacherFromSchool));
+    .post('/add-to-schoool', adminAuth('admin'), AdminAuthenticatedController(UserController.addTeacherToSchool))
+    .patch('/update-in-school', adminAuth('admin'), AdminAuthenticatedController(UserController.updateTeacherInSchool))
+    .delete('/remove-from-school', adminAuth('admin'), AdminAuthenticatedController(UserController.removeTeacherFromSchool));
 
 export default router;
 

@@ -10,7 +10,7 @@ router
     .use('/auth', authRoute)
     .use('/iamEduh', AdminRoute)
     .use('/school', SchoolRoute)
-    .use('/user', userRoute);
+    .use('/teacher', userRoute);
 
 export default router;
 
