@@ -20,6 +20,10 @@ router
     .post('/verifyemail', AuthController.verifyEmail)
     .get('/resendverifyemail', AuthController.resendVerificationEmail)
     .post('/login', AuthController.login)
+    .post('/forgotpassword', AuthController.forgotPassword)
+    .post('/resetpassword', AuthController.resetPassword)
+    .post('/changepassword', basicAuth('access'), AuthenticatedController(AuthController.changePassword))
+
 
     .get('/logout', basicAuth('access'), AuthenticatedController(AuthController.logout))
     .get('/data', basicAuth('access'), AuthenticatedController(AuthController.getLoggedUserData))
