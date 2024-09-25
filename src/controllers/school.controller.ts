@@ -134,22 +134,34 @@ export default class SchoolController {
         });
     }
 
-    static async addSchoolAdmin(req: AuthenticatedRequest, res: Response) {
-        const { adminId, schoolId, role, restrictions } = req.body;
+    static async createOrUpdateSchoolAdmin(req: AdminAuthenticatedRequest, res: Response) {
+        const { adminId, schoolId } = req.body;
+        const { role, restrictions } = req.body;
 
-        if (!adminId || !schoolId || !role) {
-            throw new BadRequestError('AdminId, schoolId, and role are required');
+        if (!adminId || !schoolId) {
+            throw new BadRequestError('AdminId and schoolId are required');
         }
 
-        const schoolAdminData = { adminId, schoolId, role, restrictions };
+        const schoolAdminData: Partial<ISchoolAdmin> = {};
+        if (role) schoolAdminData.role = role;
+        if (restrictions) schoolAdminData.restrictions = restrictions;
 
-        const newSchoolAdmin = await SchoolService.addSchoolAdmin(schoolAdminData);
+        const { schoolAdmin, created } = await SchoolService.createOrUpdateSchoolAdmin(
+            adminId,
+            schoolId,
+            schoolAdminData,
+            req.admin
+        );
 
-        res.status(201).json({
+        const message = created
+            ? 'School Admin created successfully'
+            : 'School Admin updated successfully';
+
+        res.status(created ? 201 : 200).json({
             status: 'success',
-            message: 'School Admin added successfully',
+            message,
             data: {
-                schoolAdmin: newSchoolAdmin,
+                schoolAdmin,
             },
         });
     }
@@ -166,34 +178,6 @@ export default class SchoolController {
                 schoolAdmins,
                 count,
                 totalPages,
-            },
-        });
-    }
-
-    static async updateSchoolAdmin(req: AdminAuthenticatedRequest, res: Response) {
-        const { teacherId, schoolId } = req.query;
-        const { role, restrictions } = req.body;
-
-        if (!teacherId || !schoolId) {
-            throw new BadRequestError('UserId and schoolId are required');
-        }
-
-        const updateData: Partial<ISchoolAdmin> = {};
-        if (role) updateData.role = role;
-        if (restrictions) updateData.restrictions = restrictions;
-
-        const updatedSchoolAdmin = await SchoolService.updateSchoolAdmin(
-            teacherId as string,
-            schoolId as string,
-            updateData,
-            req.admin
-        );
-
-        res.status(200).json({
-            status: 'success',
-            message: 'School Admin updated successfully',
-            data: {
-                schoolAdmin: updatedSchoolAdmin,
             },
         });
     }
