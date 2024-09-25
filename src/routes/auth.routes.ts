@@ -1,13 +1,13 @@
 import express, { Router } from 'express';
 import AuthController from '../controllers/auth.controller';
-import { basicAuth, AuthenticatedController } from '../middlewares/authMiddleware';
+import { basicAuth, AuthenticatedController, optionalAuth } from '../middlewares/authMiddleware';
 // import { rateLimiter } from '../middlewares/rateLimiter';
 // import passport from 'passport';
 
 const router: Router = express.Router();
 
 router
-    .post('/signup', AuthController.signup)
+    .post('/signup', optionalAuth, AuthController.signup)
     .post('/verifyemail', AuthController.verifyEmail)
     .get('/resendverifyemail', AuthController.resendVerificationEmail)
     .post('/login', AuthController.login)
