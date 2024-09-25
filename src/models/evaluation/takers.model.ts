@@ -18,37 +18,37 @@ export default class AssessmentTaker extends Model<AssessmentTaker | IAssessment
     @PrimaryKey
     @Default(DataType.UUIDV4)
     @Column
-    id: string;
+        id: string;
 
     @ForeignKey(() => Assessment)
     @Column
-    assessmentId: string;
+        assessmentId: string;
 
     @ForeignKey(() => User)
     @Column
-    userId: string;
+        userId: string;
 
     @Column({
         type: DataType.ENUM,
         values: Object.values(AssessmentTakerStatus),
         defaultValue: AssessmentTakerStatus.PENDING,
     })
-    status: AssessmentTakerStatus;
+        status: AssessmentTakerStatus;
 
     @Column(DataType.DATE)
-    dueDate: Date;
+        dueDate: Date;
 
     @Column(DataType.DATE)
-    startedAt: Date;
+        startedAt: Date;
 
     @Column(DataType.DATE)
-    completedAt: Date;
+        completedAt: Date;
 
     @Column(DataType.JSONB)
-    answers: { questionId: string; answer: string }[];
+        answers: { questionId: string; answer: string }[];
 
     @Column(DataType.FLOAT)
-    score: number;
+        score: number;
 }
 
 export interface IAssessmentTaker {
