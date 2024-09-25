@@ -5,6 +5,7 @@ import { BadRequestError } from '../utils/customErrors';
 import CloudinaryClientConfig from '../clients/cloudinary.config';
 import { ISchool } from '../models/school.model';
 import { ISchoolAdmin } from '../models/schoolAdmin.model';
+import HelperUtils from '../utils/helpers';
 
 export default class SchoolController {
     static async createSchool(req: AdminAuthenticatedRequest, res: Response) {
@@ -51,7 +52,7 @@ export default class SchoolController {
         });
     }
 
-    static async getSchool(req: AuthenticatedRequest, res: Response) {
+    static async getSchool(req: Request, res: Response) {
         const { id } = req.query;
 
         if (!id) {
@@ -69,7 +70,7 @@ export default class SchoolController {
         });
     }
 
-    static async updateSchool(req: AuthenticatedRequest, res: Response) {
+    static async updateSchool(req: Request, res: Response) {
         const { id } = req.query;
         const { name, location, registrationId, isActive } = req.body;
 
@@ -80,16 +81,20 @@ export default class SchoolController {
         const updateData: Partial<ISchool> = {};
         if (name) updateData.name = name;
         if (location) updateData.location = location;
-        if (registrationId) updateData.registrationId = registrationId;
-        if (isActive !== undefined) updateData.isActive = isActive;
+
+        if (req as AdminAuthenticatedRequest && (req as AdminAuthenticatedRequest).admin) {
+            if (registrationId) updateData.registrationId = registrationId;
+            if (isActive !== undefined) updateData.isActive = isActive;
+        }
 
         // Handle logo upload
         // eslint-disable-next-line no-undef
         const file = req.file as Express.Multer.File | undefined;
         if (file) {
+            const identifier = HelperUtils.generateRandomString(6);
             const result = await CloudinaryClientConfig.uploadtoCloudinary({
                 fileBuffer: file.buffer,
-                id: req.user.id,
+                id: identifier,
                 name: file.originalname,
                 type: 'image',
             });
