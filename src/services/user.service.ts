@@ -93,14 +93,14 @@ export default class UserService {
             // If user exists, update their information
             const updatedUser = await this.updateUser(existingUser, userData);
             if (schoolData) {
-                await this.addOrUpdateTeacherInSchool(schoolData.schoolId, existingUser.id, schoolData.isTeachingStaff, schoolData.classAssigned);
+                await this.addOrUpdateTeacherInSchool(schoolData.schoolId, existingUser.id, schoolData.isTeachingStaff, schoolData.isActive, schoolData.classAssigned);
             }
             return { user: updatedUser, isNewUser: false };
         } else {
             // If user doesn't exist, create a new user
             const newUser = await this.addUser(userData);
             if (schoolData) {
-                await this.addOrUpdateTeacherInSchool(schoolData.schoolId, newUser.id, schoolData.isTeachingStaff, schoolData.classAssigned);
+                await this.addOrUpdateTeacherInSchool(schoolData.schoolId, newUser.id, schoolData.isTeachingStaff, schoolData.isActive, schoolData.classAssigned);
             }
             return { user: newUser, isNewUser: true };
         }
@@ -239,7 +239,14 @@ export default class UserService {
         transaction ? await user.destroy({ transaction }) : await user.destroy();
     }
 
-    static async addOrUpdateTeacherInSchool(schoolId: number, teacherId: string, isTeachingStaff: boolean, classAssigned?: string, user?: Admin): Promise<SchoolTeacher> {
+    static async addOrUpdateTeacherInSchool(
+        schoolId: number,
+        teacherId: string,
+        isTeachingStaff: boolean,
+        isActive: boolean,
+        classAssigned?: string,
+        user?: Admin
+    ): Promise<SchoolTeacher> {
         if (user) {
             await SchoolService.viewSingleSchool(schoolId.toString(), user, SchoolAdminPermissions.CREATE_TEACHER);
         }
@@ -250,7 +257,7 @@ export default class UserService {
                 teacherId,
                 isTeachingStaff,
                 classAssigned,
-                isActive: true,
+                isActive,
             },
         });
 
@@ -261,7 +268,7 @@ export default class UserService {
             await schoolTeacher.update({
                 isTeachingStaff,
                 classAssigned,
-                isActive: true,
+                isActive,
             });
         }
 
