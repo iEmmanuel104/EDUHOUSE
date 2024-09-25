@@ -1,13 +1,15 @@
 import { Request, Response } from 'express';
 import AssessmentService, { IViewAssessmentsQuery, IViewAssessmentTakersQuery } from '../services/assessment.service';
-import { AuthenticatedRequest } from '../middlewares/authMiddleware';
+import { AdminAuthenticatedRequest, AuthenticatedRequest } from '../middlewares/authMiddleware';
 import { AssessmentTakerStatus } from '../models/evaluation/takers.model';
 
 export default class AssessmentController {
-    static async createAssessment(req: AuthenticatedRequest, res: Response) {
+    static async createAssessment(req: AdminAuthenticatedRequest, res: Response) {
         const assessmentData = req.body;
 
-        const newAssessment = await AssessmentService.addAssessment(assessmentData);
+        const Admin = (req as AdminAuthenticatedRequest).admin;
+
+        const newAssessment = await AssessmentService.addAssessment(assessmentData, Admin);
 
         res.status(201).json({
             status: 'success',
@@ -48,11 +50,13 @@ export default class AssessmentController {
         });
     }
 
-    static async updateAssessment(req: AuthenticatedRequest, res: Response) {
+    static async updateAssessment(req: AdminAuthenticatedRequest, res: Response) {
         const { id } = req.params;
         const updateData = req.body;
 
-        const updatedAssessment = await AssessmentService.updateAssessment(id, updateData);
+        const Admin = (req as AdminAuthenticatedRequest).admin;
+
+        const updatedAssessment = await AssessmentService.updateAssessment(id, updateData, Admin);
 
         res.status(200).json({
             status: 'success',
@@ -63,10 +67,12 @@ export default class AssessmentController {
         });
     }
 
-    static async deleteAssessment(req: AuthenticatedRequest, res: Response) {
+    static async deleteAssessment(req: AdminAuthenticatedRequest, res: Response) {
         const { id } = req.params;
 
-        await AssessmentService.deleteAssessment(id);
+        const Admin = (req as AdminAuthenticatedRequest).admin;
+
+        await AssessmentService.deleteAssessment(id, Admin);
 
         res.status(200).json({
             status: 'success',
@@ -77,10 +83,12 @@ export default class AssessmentController {
 
 
     // assessment taker
-    static async assignAssessmentToUser(req: AuthenticatedRequest, res: Response) {
+    static async assignAssessmentToUser(req: AdminAuthenticatedRequest, res: Response) {
         const takerData = req.body;
 
-        const newTaker = await AssessmentService.addAssessmentTaker(takerData);
+        const Admin = (req as AdminAuthenticatedRequest).admin;
+
+        const newTaker = await AssessmentService.addAssessmentTaker(takerData, Admin);
 
         res.status(201).json({
             status: 'success',
@@ -136,10 +144,12 @@ export default class AssessmentController {
         });
     }
 
-    static async deleteAssessmentTaker(req: AuthenticatedRequest, res: Response) {
+    static async deleteAssessmentTaker(req: AdminAuthenticatedRequest, res: Response) {
         const { id } = req.params;
 
-        await AssessmentService.deleteAssessmentTaker(id);
+        const Admin = (req as AdminAuthenticatedRequest).admin;
+
+        await AssessmentService.deleteAssessmentTaker(id, Admin);
 
         res.status(200).json({
             status: 'success',
