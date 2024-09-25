@@ -183,14 +183,14 @@ export default class SchoolController {
     }
 
     static async deleteSchoolAdmin(req: AdminAuthenticatedRequest, res: Response) {
-        const { teacherId, schoolId } = req.query;
+        const { adminId, schoolId } = req.query;
 
-        if (!teacherId || !schoolId) {
-            throw new BadRequestError('UserId and schoolId are required');
+        if (!adminId || !schoolId) {
+            throw new BadRequestError('adminId and schoolId are required');
         }
 
         await SchoolService.deleteSchoolAdmin(
-            teacherId as string,
+            adminId as string,
             schoolId as string,
             req.admin
         );
