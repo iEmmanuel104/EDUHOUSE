@@ -8,15 +8,14 @@ import { emailService, EmailTemplate } from '../utils/Email';
 import UserService, { IDynamicQueryOptions } from '../services/user.service';
 import { AuthenticatedRequest } from '../middlewares/authMiddleware';
 import { Transaction } from 'sequelize';
+import { ISchoolTeacher } from '../models/schoolTeacher.model';
 
 export default class AuthController {
 
     static async signup(req: Request, res: Response) {
-        const { email, firstName, lastName, schoolId } = req.body;
+        const { email, firstName, lastName, schoolId, displayImage, gender, isTeachingStaff, classAssigned, phone } = req.body;
 
-        await UserService.isEmailAndUsernameAvailable(email);
-
-        const newUser = await UserService.addUser({
+        const userData = {
             email,
             firstName,
             lastName,
@@ -24,12 +23,38 @@ export default class AuthController {
                 activated: false,
                 emailVerified: false,
             },
-            schoolId,
-        });
+            displayImage,
+            gender,
+            phone: {
+                countryCode: phone?.countryCode || '+234',
+                number: phone?.number,
+            },
+        };
 
+        const schoolData: Omit<ISchoolTeacher, 'teacherId'> | undefined = schoolId
+            ? {
+                schoolId,
+                isTeachingStaff: isTeachingStaff || false,
+                classAssigned,
+                isActive: true, // or set this based on your logic
+            }
+            : undefined;
 
-        const otpCode = await AuthUtil.generateCode({ type: 'emailverification', identifier: newUser.id, expiry: 60 * 10 });
+        const { user, isNewUser } = await UserService.addOrUpdateUser(userData, schoolData);
 
+        if (!isNewUser) {
+            // If the user already exists, just add or update them in the school
+            res.status(200).json({
+                status: 'success',
+                message: 'User added or updated in school successfully',
+                data: {
+                    user,
+                },
+            });
+            return;
+        }
+
+        const otpCode = await AuthUtil.generateCode({ type: 'emailverification', identifier: user.id, expiry: 60 * 10 });
 
         const templateData = {
             otpCode,
@@ -54,13 +79,13 @@ export default class AuthController {
             status: 'success',
             message: 'Email verification code sent successfully',
             data: {
-                user: newUser,
+                user,
             },
         });
     }
 
     static async verifyEmail(req: Request, res: Response) {
-        const { otpCode, email, firstName, lastName, displayImage, gender, isTeachingStaff, classAssigned, phone } = req.body;
+        const { otpCode, email } = req.body;
 
         await Database.transaction(async (transaction: Transaction) => {
 
@@ -72,28 +97,18 @@ export default class AuthController {
             if (!validCode) throw new BadRequestError('Invalid otp code');
 
             await user.update({
-                status: { ...user.status, emailVerified: true },
-                firstName,
-                lastName,
-                displayImage,
-                gender,
-                isTeachingStaff,
-                classAssigned,
-                phone: {
-                    countryCode: phone.countryCode || '+234',
-                    number: phone.number,
-                },
+                status: { ...user.status, emailVerified: true, activated: true },
             }, { transaction });
 
             await AuthUtil.deleteToken({ user, tokenType: 'emailverification', tokenClass: 'code' });
 
             const updatedUser = await UserService.viewSingleUser(user.id);
 
-            // password is the users lastnme in lowercase
-            const password = lastName.toLowerCase();
+            // password is the user's lastname in lowercase
+            const password = user.lastName.toLowerCase();
 
             // Create a new password for the user
-            await Password.create({ userId: user.id, password: password });
+            await Password.create({ userId: user.id, password: password }, { transaction });
 
             const accessToken = await AuthUtil.generateToken({ type: 'access', user });
             const refreshToken = await AuthUtil.generateToken({ type: 'refresh', user });
