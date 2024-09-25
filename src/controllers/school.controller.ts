@@ -170,24 +170,6 @@ export default class SchoolController {
         });
     }
 
-    static async getSchoolAdmin(req: AuthenticatedRequest, res: Response) {
-        const { userId, schoolId } = req.query;
-
-        if (!userId || !schoolId) {
-            throw new BadRequestError('UserId and schoolId are required');
-        }
-
-        const schoolAdmin = await SchoolService.viewSingleSchoolAdmin(userId as string, schoolId as string);
-
-        res.status(200).json({
-            status: 'success',
-            message: 'School Admin retrieved successfully',
-            data: {
-                schoolAdmin,
-            },
-        });
-    }
-
     static async updateSchoolAdmin(req: AuthenticatedRequest, res: Response) {
         const { userId, schoolId } = req.query;
         const { role, restrictions } = req.body;
