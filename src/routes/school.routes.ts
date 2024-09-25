@@ -19,7 +19,6 @@ router
     // School admin management routes
     .post('/admin/add', adminAuth('admin'), AdminAuthenticatedController(SchoolController.addSchoolAdmin))
     .get('/admin/all', adminAuth('admin'), AdminAuthenticatedController(SchoolController.getSchoolAdmins))
-    .get('/admin/info', adminAuth('admin'), AdminAuthenticatedController(SchoolController.getSchoolAdmin))
     .patch('/admin/update', adminAuth('admin'), AdminAuthenticatedController(SchoolController.updateSchoolAdmin))
     .delete('/admin/delete', adminAuth('admin'), AdminAuthenticatedController(SchoolController.deleteSchoolAdmin));
 
