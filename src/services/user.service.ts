@@ -5,13 +5,15 @@ import Validator from '../utils/validators';
 import Pagination, { IPaging } from '../utils/pagination';
 import { Sequelize } from '../models';
 import UserSettings, { IUserSettings } from '../models/userSettings.model';
-import SchoolTeacher from '../models/schoolTeacher.model';
+import SchoolTeacher, { ISchoolTeacher } from '../models/schoolTeacher.model';
+import School from '../models/school.model';
 export interface IViewUsersQuery {
     page?: number;
     size?: number;
     q?: string;
     isBlocked?: boolean;
     isDeactivated?: boolean;
+    schoolId?: number;
 }
 
 export interface IDynamicQueryOptions {
@@ -81,11 +83,32 @@ export default class UserService {
         return _transaction;
     }
 
+    static async addOrUpdateUser(userData: IUser, schoolData?: Omit<ISchoolTeacher, 'teacherId'>): Promise<{ user: User; isNewUser: boolean }> {
+        const existingUser = await this.isEmailExisting(userData.email);
+
+        if (existingUser) {
+            // If user exists, update their information
+            const updatedUser = await this.updateUser(existingUser, userData);
+            if (schoolData) {
+                await this.addOrUpdateTeacherInSchool(schoolData.schoolId, existingUser.id, schoolData.isTeachingStaff, schoolData.classAssigned);
+            }
+            return { user: updatedUser, isNewUser: false };
+        } else {
+            // If user doesn't exist, create a new user
+            const newUser = await this.addUser(userData);
+            if (schoolData) {
+                await this.addOrUpdateTeacherInSchool(schoolData.schoolId, newUser.id, schoolData.isTeachingStaff, schoolData.classAssigned);
+            }
+            return { user: newUser, isNewUser: true };
+        }
+    }
+
     static async viewUsers(queryData?: IViewUsersQuery): Promise<{ users: User[], count: number, totalPages?: number }> {
-        const { page, size, q: query, isBlocked, isDeactivated } = queryData || {};
+        const { page, size, q: query, isBlocked, isDeactivated, schoolId } = queryData || {};
 
         const where: Record<string | symbol, unknown> = {};
         const settingsWhere: Record<string, unknown> = {};
+        const schoolTeacherWhere: Record<string, unknown> = {};
 
         if (query) {
             where[Op.or] = [
@@ -104,6 +127,10 @@ export default class UserService {
             settingsWhere.isDeactivated = isDeactivated;
         }
 
+        if (schoolId !== undefined) {
+            schoolTeacherWhere.schoolId = schoolId;
+        }
+
         const queryOptions: FindAndCountOptions<User> = {
             where,
             include: [
@@ -112,6 +139,17 @@ export default class UserService {
                     as: 'settings',
                     attributes: ['joinDate', 'isBlocked', 'isDeactivated', 'lastLogin', 'meta'],
                     where: settingsWhere,
+                },
+                {
+                    model: School,
+                    as: 'schools',
+                    through: {
+                        // model: SchoolTeacher,
+                        // as: 'schoolTeacher',
+                        attributes: ['isTeachingStaff', 'classAssigned', 'isActive'],
+                        where: schoolTeacherWhere,
+                    },
+                    attributes: ['id', 'name'],
                 },
             ],
         };
@@ -125,7 +163,7 @@ export default class UserService {
         const { rows: users, count } = await User.findAndCountAll(queryOptions);
 
         // Calculate the total count
-        const totalCount = (count as unknown as []).length;
+        const totalCount = count as number;
 
         if (page && size && users.length > 0) {
             const totalPages = Pagination.estimateTotalPage({ count: totalCount, limit: size } as IPaging);
@@ -134,6 +172,7 @@ export default class UserService {
             return { users, count: totalCount };
         }
     }
+
 
     static async viewSingleUser(id: string): Promise<User> {
         const user: User | null = await User.scope('withSettings').findByPk(id);
@@ -195,6 +234,29 @@ export default class UserService {
 
     static async deleteUser(user: User, transaction?: Transaction): Promise<void> {
         transaction ? await user.destroy({ transaction }) : await user.destroy();
+    }
+
+    static async addOrUpdateTeacherInSchool(schoolId: number, teacherId: string, isTeachingStaff: boolean, classAssigned?: string): Promise<SchoolTeacher> {
+        const [schoolTeacher, created] = await SchoolTeacher.findOrCreate({
+            where: { schoolId, teacherId },
+            defaults: {
+                schoolId,
+                teacherId,
+                isTeachingStaff,
+                classAssigned,
+                isActive: true,
+            },
+        });
+
+        if (!created) {
+            await schoolTeacher.update({
+                isTeachingStaff,
+                classAssigned,
+                isActive: true,
+            });
+        }
+
+        return schoolTeacher;
     }
 
     static async addTeacherToSchool(schoolId: number, teacherId: string, isTeachingStaff: boolean, classAssigned?: string): Promise<SchoolTeacher> {
