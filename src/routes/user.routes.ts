@@ -16,4 +16,3 @@ router
     .delete('/remove-from-school', adminAuth('admin'), AdminAuthenticatedController(UserController.removeTeacherFromSchool));
 
 export default router;
-
