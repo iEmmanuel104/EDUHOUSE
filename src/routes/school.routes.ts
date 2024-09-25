@@ -1,6 +1,6 @@
 import express, { Router } from 'express';
 import SchoolController from '../controllers/school.controller';
-import { AdminAuthenticatedController, adminAuth, AuthenticatedController, basicAuth, optionalAuth } from '../middlewares/authMiddleware';
+import { AdminAuthenticatedController, adminAuth, optionalAuth } from '../middlewares/authMiddleware';
 import { uploadMiddleware, UploadType } from '../middlewares/uploadMiddleware';
 
 const router: Router = express.Router();
@@ -12,8 +12,8 @@ router
     // School management routes
     .post('/', adminAuth('admin'), AdminAuthenticatedController(SchoolController.createSchool))
     .get('/', optionalAuth, SchoolController.getSchools)
-    .get('/info', AuthenticatedController(SchoolController.getSchool))
-    .patch('/', basicAuth('access'), upload, AuthenticatedController(SchoolController.updateSchool))
+    .get('/info', optionalAuth, SchoolController.getSchool)
+    .patch('/', optionalAuth, upload, SchoolController.updateSchool)
     .delete('/', adminAuth('admin'), AdminAuthenticatedController(SchoolController.deleteSchool))
 
     // School admin management routes
