@@ -274,17 +274,6 @@ export default class UserService {
         return schoolTeacher;
     }
 
-    static async addTeacherToSchool(schoolId: number, teacherId: string, isTeachingStaff: boolean, classAssigned?: string): Promise<SchoolTeacher> {
-        const schoolTeacher = await SchoolTeacher.create({
-            schoolId,
-            teacherId,
-            isTeachingStaff,
-            classAssigned,
-            isActive: true, // Set as active by default when adding a teacher
-        });
-        return schoolTeacher;
-    }
-
     static async removeTeacherFromSchool(schoolId: string, teacherId: string, user?: Admin): Promise<void> {
         if (user) {
             await SchoolService.viewSingleSchool(schoolId, user, SchoolAdminPermissions.DELETE_TEACHER);
