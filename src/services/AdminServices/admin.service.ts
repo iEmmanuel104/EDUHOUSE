@@ -2,6 +2,8 @@ import { Op } from 'sequelize';
 import Admin, { IAdmin } from '../../models/admin.model';
 import { BadRequestError, NotFoundError } from '../../utils/customErrors';
 import { ADMIN_EMAIL } from '../../utils/constants';
+import moment from 'moment';
+import UserSettings, { IBlockMeta } from '../../models/userSettings.model';
 
 export default class AdminService {
 
@@ -48,5 +50,37 @@ export default class AdminService {
         }
 
         await admin.destroy();
+    }
+
+    static async blockUser(id: string, status: boolean, reason: string): Promise<UserSettings> {
+        const userSettings = await UserSettings.findOne({ where: { userId: id } });
+
+        if (!userSettings) {
+            throw new NotFoundError('User settings not found');
+        }
+
+        const currentDate = moment().format('YYYY-MM-DD');
+        const updatedMeta: IBlockMeta = userSettings.meta || { blockHistory: [], unblockHistory: [] };
+
+        if (status) {
+            // Blocking the user
+            if (userSettings.isBlocked) {
+                throw new BadRequestError('User is already blocked');
+            }
+            updatedMeta.blockHistory.push({ [currentDate]: reason });
+        } else {
+            // Unblocking the user
+            if (!userSettings.isBlocked) {
+                throw new BadRequestError('User is not blocked');
+            }
+            updatedMeta.unblockHistory.push({ [currentDate]: reason });
+        }
+
+        await userSettings.update({
+            isBlocked: status,
+            meta: updatedMeta,
+        });
+
+        return userSettings;
     }
 }

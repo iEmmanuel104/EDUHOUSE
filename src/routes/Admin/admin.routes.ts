@@ -11,7 +11,7 @@ router.post('/verify', AdminController.verifySuperAdminLogin);
 router.post('/create', adminAuth('admin'), AdminAuthenticatedController(AdminController.createAdmin));
 router.get('/admins', adminAuth('admin'), AdminAuthenticatedController(AdminController.getAllAdmins));
 router.delete('/delete', adminAuth('admin'), AdminAuthenticatedController(AdminController.deleteAdmin));
-// router.post('/block-user', adminAuth('admin'), AdminAuthenticatedController(AdminController.blockUser));
-// router.post('/deactivate-user', adminAuth('admin'), AdminAuthenticatedController(AdminController.deactivateUser));
+router.post('/block-user', adminAuth('admin'), AdminAuthenticatedController(AdminController.blockUser));
+router.post('/deactivate-user', adminAuth('admin'), AdminAuthenticatedController(AdminController.deactivateUser));
 
 export default router;

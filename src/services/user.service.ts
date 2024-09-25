@@ -103,7 +103,7 @@ export default class UserService {
         }
     }
 
-    static async viewUsers(queryData?: IViewUsersQuery): Promise<{ users: User[], count: number, totalPages?: number }> {
+    static async viewUsers(queryData?: IViewUsersQuery): Promise<{ teachers: User[], count: number, totalPages?: number }> {
         const { page, size, q: query, isBlocked, isDeactivated, schoolId } = queryData || {};
 
         const where: Record<string | symbol, unknown> = {};
@@ -160,16 +160,16 @@ export default class UserService {
             queryOptions.offset = offset || 0;
         }
 
-        const { rows: users, count } = await User.findAndCountAll(queryOptions);
+        const { rows: teachers, count } = await User.findAndCountAll(queryOptions);
 
         // Calculate the total count
         const totalCount = count as number;
 
-        if (page && size && users.length > 0) {
+        if (page && size && teachers.length > 0) {
             const totalPages = Pagination.estimateTotalPage({ count: totalCount, limit: size } as IPaging);
-            return { users, count: totalCount, ...totalPages };
+            return { teachers, count: totalCount, ...totalPages };
         } else {
-            return { users, count: totalCount };
+            return { teachers, count: totalCount };
         }
     }
 
