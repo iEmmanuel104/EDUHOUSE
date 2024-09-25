@@ -4,6 +4,7 @@ import { AdminAuthenticatedRequest } from '../../middlewares/authMiddleware';
 import { BadRequestError, ForbiddenError } from '../../utils/customErrors';
 import { AuthUtil } from '../../utils/token';
 import { emailService, EmailTemplate } from '../../utils/Email';
+import UserService from '../../services/user.service';
 
 export default class AdminController {
 
@@ -111,5 +112,62 @@ export default class AdminController {
             data: null,
         });
     }
+
+    static async blockUser(req: AdminAuthenticatedRequest, res: Response) {
+        const { id, status } = req.query;
+        const { reason } = req.body;
+
+        if (req.admin.isSuperAdmin === false) {
+            throw new ForbiddenError('Only super admin can block users');
+        }
+
+        if (status !== 'true' && status !== 'false') {
+            throw new BadRequestError('Invalid status value');
+        }
+
+        if (!reason || typeof reason !== 'string') {
+            throw new BadRequestError('Reason is required and must be a string');
+        }
+
+        await AdminService.blockUser(id as string, status === 'true', reason);
+
+        res.status(200).json({
+            status: 'success',
+            message: status === 'true' ? 'User blocked successfully' : 'User unblocked successfully',
+            data: null,
+        });
+    }
+
+    static async deactivateUser(req: AdminAuthenticatedRequest, res: Response) {
+        const { isDeactivated, id } = req.query;
+
+        if (!id) {
+            throw new BadRequestError('User ID is required');
+        }
+
+        if (isDeactivated === undefined || (isDeactivated !== 'true' && isDeactivated !== 'false')) {
+            throw new BadRequestError('Invalid or missing isDeactivated value');
+        }
+
+        // Fetch the user
+        const user = await UserService.viewSingleUser(id as string);
+
+        const state: boolean = isDeactivated === 'true';
+
+        // Check if the status is actually changing
+        if (state === user.settings.isDeactivated) {
+            throw new BadRequestError('User is already in the desired deactivated state');
+        }
+
+        // Update the user's settings
+        await UserService.updateUserSettings(user.id, { isDeactivated: state });
+
+        res.status(200).json({
+            status: 'success',
+            message: state ? 'User deactivated successfully' : 'User reactivated successfully',
+            data: null,
+        });
+    }
+    
 
 }
