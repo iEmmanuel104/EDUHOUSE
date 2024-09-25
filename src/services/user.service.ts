@@ -10,6 +10,8 @@ import School from '../models/school.model';
 import Admin from '../models/admin.model';
 import SchoolService from './school.service';
 import { SchoolAdminPermissions } from '../models/schoolAdmin.model';
+import Assessment from '../models/evaluation/assessment.model';
+import AssessmentTaker, { AssessmentTakerStatus } from '../models/evaluation/takers.model';
 export interface IViewUsersQuery {
     page?: number;
     size?: number;
@@ -147,14 +149,52 @@ export default class UserService {
                     model: School,
                     as: 'schools',
                     through: {
-                        // model: SchoolTeacher,
-                        // as: 'schoolTeacher',
                         attributes: ['isTeachingStaff', 'classAssigned', 'isActive'],
                         where: schoolTeacherWhere,
                     },
                     attributes: ['id', 'name'],
                 },
+                {
+                    model: Assessment,
+                    as: 'assessments',
+                    attributes: ['id', 'name', 'description'],
+                    through: {
+                        // model: AssessmentTaker,
+                        attributes: ['status', 'dueDate', 'startedAt', 'completedAt', 'score'],
+                    },
+                },
             ],
+            attributes: {
+                include: [
+                    [
+                        Sequelize.literal(`CAST((
+                            SELECT COUNT(DISTINCT "AssessmentTaker"."id")
+                            FROM "AssessmentTakers" AS "AssessmentTaker"
+                            WHERE "AssessmentTaker"."userId" = "User"."id"
+                        ) AS INTEGER)`),
+                        'assessmentTakenCount',
+                    ],
+                    [
+                        Sequelize.literal(`CAST((
+                            SELECT COUNT(DISTINCT "AssessmentTaker"."id")
+                            FROM "AssessmentTakers" AS "AssessmentTaker"
+                            WHERE "AssessmentTaker"."userId" = "User"."id"
+                            AND "AssessmentTaker"."status" = '${AssessmentTakerStatus.PENDING}'
+                            AND "AssessmentTaker"."dueDate" > NOW()
+                        ) AS INTEGER)`),
+                        'upcomingAssessmentCount',
+                    ],
+                    [
+                        Sequelize.literal(`CAST((
+                            SELECT COUNT(DISTINCT "AssessmentTaker"."id")
+                            FROM "AssessmentTakers" AS "AssessmentTaker"
+                            WHERE "AssessmentTaker"."userId" = "User"."id"
+                            AND "AssessmentTaker"."status" = '${AssessmentTakerStatus.ONGOING}'
+                        ) AS INTEGER)`),
+                        'ongoingAssessmentCount',
+                    ],
+                ],
+            },
         };
 
         if (page && size && page > 0 && size > 0) {
@@ -165,7 +205,6 @@ export default class UserService {
 
         const { rows: teachers, count } = await User.findAndCountAll(queryOptions);
 
-        // Calculate the total count
         const totalCount = count as number;
 
         if (page && size && teachers.length > 0) {
@@ -177,10 +216,67 @@ export default class UserService {
     }
 
     static async viewSingleUser(id: string, transaction?: Transaction): Promise<User> {
-        const user: User | null = await User.scope('withSettings').findByPk(id, { transaction });
+        const user: User | null = await User.findByPk(id, {
+            transaction,
+            include: [
+                {
+                    model: UserSettings,
+                    as: 'settings',
+                },
+                {
+                    model: School,
+                    as: 'schools',
+                    through: {
+                        attributes: ['isTeachingStaff', 'classAssigned', 'isActive'],
+                    },
+                },
+                {
+                    model: Assessment,
+                    as: 'assessments',
+                    include: [
+                        {
+                            model: AssessmentTaker,
+                            where: { userId: id },
+                            required: false,
+                        },
+                    ],
+                },
+            ],
+            // attributes: {
+            //     include: [
+            //         [
+            //             Sequelize.literal(`(
+            //                 SELECT COUNT(DISTINCT "AssessmentTaker"."id")
+            //                 FROM "AssessmentTakers" AS "AssessmentTaker"
+            //                 WHERE "AssessmentTaker"."userId" = "User"."id"
+            //             )`),
+            //             'assessmentTakenCount',
+            //         ],
+            //         [
+            //             Sequelize.literal(`(
+            //                 SELECT COUNT(DISTINCT "AssessmentTaker"."id")
+            //                 FROM "AssessmentTakers" AS "AssessmentTaker"
+            //                 WHERE "AssessmentTaker"."userId" = "User"."id"
+            //                 AND "AssessmentTaker"."status" = '${AssessmentTakerStatus.PENDING}'
+            //                 AND "AssessmentTaker"."dueDate" > NOW()
+            //             )`),
+            //             'upcomingAssessmentCount',
+            //         ],
+            //         [
+            //             Sequelize.literal(`(
+            //                 SELECT COUNT(DISTINCT "AssessmentTaker"."id")
+            //                 FROM "AssessmentTakers" AS "AssessmentTaker"
+            //                 WHERE "AssessmentTaker"."userId" = "User"."id"
+            //                 AND "AssessmentTaker"."status" = '${AssessmentTakerStatus.ONGOING}'
+            //             )`),
+            //             'ongoingAssessmentCount',
+            //         ],
+            //     ],
+            // },
+        });
 
         if (!user) {
-            throw new NotFoundError('Oops User not found');
+            throw new NotFoundError('User not found');
         }
 
         return user;
