@@ -84,7 +84,10 @@ export default class User extends Model<User | IUser> {
     })
         registrationNumber: string;
 
-    @Column({ type: DataType.STRING })
+    @Column({
+        type: DataType.STRING,
+        allowNull: false,
+    })
         gender: string;
 
     @Column({ type: DataType.STRING })
@@ -222,8 +225,6 @@ export interface IUser {
         countryCode: string;
         number: string
     };
+    gender: string;
     dob?: Date;
-    isTeachingStaff?: boolean;
-    classAssigned?: string;
-    schoolId: number;
 }
