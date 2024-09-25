@@ -136,7 +136,6 @@ export default class AuthController {
             await Password.create({ userId: user.id, password: password }, { transaction });
 
             const accessToken = await AuthUtil.generateToken({ type: 'access', user });
-            const refreshToken = await AuthUtil.generateToken({ type: 'refresh', user });
 
             res.status(200).json({
                 status: 'success',
@@ -144,7 +143,6 @@ export default class AuthController {
                 data: {
                     teacher: updatedUser,
                     accessToken,
-                    refreshToken,
                 },
             });
         });
@@ -243,7 +241,6 @@ export default class AuthController {
         }
 
         const accessToken = await AuthUtil.generateToken({ type: 'access', user });
-        const refreshToken = await AuthUtil.generateToken({ type: 'refresh', user });
 
         // // update the last Login for the user
         await UserService.updateUserSettings(user.id, { lastLogin: new Date() });
@@ -254,7 +251,6 @@ export default class AuthController {
             data: {
                 teacher: user.dataValues,
                 accessToken,
-                refreshToken,
             },
         });
     }
