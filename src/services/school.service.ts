@@ -53,11 +53,6 @@ export default class SchoolService {
             where[Op.or] = [
                 { name: { [Op.iLike]: `%${query}%` } },
                 { registrationId: { [Op.iLike]: `%${query}%` } },
-                Sequelize.where(
-                    Sequelize.fn('concat', 'EDH', Sequelize.literal('school_code + 1000')),
-                    { [Op.iLike]: `%${query}%` }
-                ),
-                { schoolCode: isNaN(parseInt(query)) ? -1 : parseInt(query) },
             ];
         }
 
@@ -131,18 +126,15 @@ export default class SchoolService {
         }
     }
 
-    static async viewSingleSchool(identifier: string): Promise<School> {
-
+    static async viewSingleSchool(identifier: string, user?: Admin | User, restrictionToCheck?: SchoolAdminPermissions): Promise<School> {
         let schoolId: number | null;
         if (identifier.startsWith('EDH')) {
-            // If it starts with 'EDH', assume it's a formatted school code
-            const schoolIdValue = await School.convertFormattedCodeToInteger(identifier);    
+            const schoolIdValue = await School.convertFormattedCodeToInteger(identifier);
             if (!schoolIdValue) {
                 throw new NotFoundError('Invalid school code');
             }
             schoolId = schoolIdValue;
         } else {
-            // Otherwise, try to parse it as a school code number
             schoolId = parseInt(identifier, 10);
         }
 
@@ -158,17 +150,55 @@ export default class SchoolService {
             throw new NotFoundError('School not found');
         }
 
-        return school;
+        // If no user is provided, return the school without permission checks
+        if (!user) {
+            return school;
+        }
+
+        // Check user permissions
+        if (user instanceof Admin) {
+            if (user.isSuperAdmin) {
+                // Super admins have full access
+                return school;
+            } else {
+                // Check if the admin is associated with this school
+                const schoolAdmin = await SchoolAdmin.findOne({
+                    where: { adminId: user.id, schoolId: school.id },
+                });
+
+                if (!schoolAdmin) {
+                    throw new UnauthorizedError('You do not have permission to view this school');
+                }
+
+                // Check for specific restriction if provided
+                if (restrictionToCheck &&
+                    schoolAdmin.role !== AdminRole.OWNER &&
+                    schoolAdmin.restrictions.includes(restrictionToCheck)) {
+                    throw new UnauthorizedError(`You do not have permission to ${restrictionToCheck} for this school`);
+                }
+
+                return school;
+            }
+        } else if (user instanceof User) {
+            // Check if the user is a teacher in this school
+            const isTeacher = await school.$has('teachers', user.id);
+            if (!isTeacher) {
+                throw new UnauthorizedError('You do not have permission to view this school');
+            }
+            return school;
+        }
+
+        throw new UnauthorizedError('Invalid user type');
     }
 
-    static async updateSchool(id: string, dataToUpdate: Partial<ISchool>): Promise<School> {
-        const school = await this.viewSingleSchool(id);
+    static async updateSchool(id: string, dataToUpdate: Partial<ISchool>, user?: Admin): Promise<School> {
+        const school = await this.viewSingleSchool(id, user, SchoolAdminPermissions.UPDATE_SCHOOL);
         await school.update(dataToUpdate);
         return school;
     }
 
-    static async deleteSchool(id: string, transaction?: Transaction): Promise<void> {
-        const school = await this.viewSingleSchool(id);
+    static async deleteSchool(id: string, user?: Admin, transaction?: Transaction): Promise<void> {
+        const school = await this.viewSingleSchool(id, user, SchoolAdminPermissions.DELETE_SCHOOL);
         transaction ? await school.destroy({ transaction }) : await school.destroy();
     }
 
