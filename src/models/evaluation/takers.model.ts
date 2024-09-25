@@ -26,7 +26,7 @@ export default class AssessmentTaker extends Model<AssessmentTaker | IAssessment
 
     @ForeignKey(() => User)
     @Column
-        userId: string;
+        teacherId: string;
 
     @Column({
         type: DataType.ENUM,
@@ -54,7 +54,7 @@ export default class AssessmentTaker extends Model<AssessmentTaker | IAssessment
 export interface IAssessmentTaker {
     id?: string;
     assessmentId: string;
-    userId: string;
+    teacherId: string;
     status: AssessmentTakerStatus;
     dueDate: Date;
     startedAt: Date;
