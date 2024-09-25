@@ -170,11 +170,11 @@ export default class SchoolController {
         });
     }
 
-    static async updateSchoolAdmin(req: AuthenticatedRequest, res: Response) {
-        const { userId, schoolId } = req.query;
+    static async updateSchoolAdmin(req: AdminAuthenticatedRequest, res: Response) {
+        const { teacherId, schoolId } = req.query;
         const { role, restrictions } = req.body;
 
-        if (!userId || !schoolId) {
+        if (!teacherId || !schoolId) {
             throw new BadRequestError('UserId and schoolId are required');
         }
 
@@ -182,7 +182,12 @@ export default class SchoolController {
         if (role) updateData.role = role;
         if (restrictions) updateData.restrictions = restrictions;
 
-        const updatedSchoolAdmin = await SchoolService.updateSchoolAdmin(userId as string, schoolId as string, updateData);
+        const updatedSchoolAdmin = await SchoolService.updateSchoolAdmin(
+            teacherId as string,
+            schoolId as string,
+            updateData,
+            req.admin
+        );
 
         res.status(200).json({
             status: 'success',
@@ -193,14 +198,18 @@ export default class SchoolController {
         });
     }
 
-    static async deleteSchoolAdmin(req: AuthenticatedRequest, res: Response) {
-        const { userId, schoolId } = req.query;
+    static async deleteSchoolAdmin(req: AdminAuthenticatedRequest, res: Response) {
+        const { teacherId, schoolId } = req.query;
 
-        if (!userId || !schoolId) {
+        if (!teacherId || !schoolId) {
             throw new BadRequestError('UserId and schoolId are required');
         }
 
-        await SchoolService.deleteSchoolAdmin(userId as string, schoolId as string);
+        await SchoolService.deleteSchoolAdmin(
+            teacherId as string,
+            schoolId as string,
+            req.admin
+        );
 
         res.status(200).json({
             status: 'success',
