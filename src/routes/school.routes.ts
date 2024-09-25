@@ -17,9 +17,8 @@ router
     .delete('/', adminAuth('admin'), AdminAuthenticatedController(SchoolController.deleteSchool))
 
     // School admin management routes
-    .post('/admin/add', adminAuth('admin'), AdminAuthenticatedController(SchoolController.addSchoolAdmin))
-    .get('/admin/all', adminAuth('admin'), AdminAuthenticatedController(SchoolController.getSchoolAdmins))
-    .patch('/admin/update', adminAuth('admin'), AdminAuthenticatedController(SchoolController.updateSchoolAdmin))
-    .delete('/admin/delete', adminAuth('admin'), AdminAuthenticatedController(SchoolController.deleteSchoolAdmin));
+    .post('/admin', adminAuth('admin'), AdminAuthenticatedController(SchoolController.createOrUpdateSchoolAdmin))
+    .get('/admin', adminAuth('admin'), AdminAuthenticatedController(SchoolController.getSchoolAdmins))
+    .delete('/admin', adminAuth('admin'), AdminAuthenticatedController(SchoolController.deleteSchoolAdmin));
 
 export default router;
