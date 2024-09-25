@@ -111,7 +111,6 @@ export default class UserController {
         });
     }
 
-
     static async addTeacherToSchool(req: AdminAuthenticatedRequest, res: Response) {
         const { schoolId, teacherId, isTeachingStaff, isActive, classAssigned } = req.body;
 
