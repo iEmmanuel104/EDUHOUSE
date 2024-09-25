@@ -35,8 +35,8 @@ export default class SchoolController {
         const user = (req as AuthenticatedRequest).user;
 
         // Add userId to queryData if it's a superadmin request
-        if (admin && admin.isSuperAdmin && req.query.userId) {
-            queryData.userId = req.query.userId as string;
+        if (admin && admin.isSuperAdmin && req.query.teacherId) {
+            queryData.userId = req.query.teacherId as string;
         }
 
         const { schools, count, totalPages } = await SchoolService.viewSchools(queryData, admin || user);
@@ -82,9 +82,11 @@ export default class SchoolController {
         if (name) updateData.name = name;
         if (location) updateData.location = location;
 
+        let Admin = undefined;
         if (req as AdminAuthenticatedRequest && (req as AdminAuthenticatedRequest).admin) {
             if (registrationId) updateData.registrationId = registrationId;
             if (isActive !== undefined) updateData.isActive = isActive;
+            Admin = (req as AdminAuthenticatedRequest).admin;
         }
 
         // Handle logo upload
@@ -103,7 +105,7 @@ export default class SchoolController {
             updateData.logo = req.body.logo;
         }
 
-        const updatedSchool = await SchoolService.updateSchool(id as string, updateData);
+        const updatedSchool = await SchoolService.updateSchool(id as string, updateData, Admin);
 
         res.status(200).json({
             status: 'success',
@@ -114,14 +116,16 @@ export default class SchoolController {
         });
     }
 
-    static async deleteSchool(req: AuthenticatedRequest, res: Response) {
+    static async deleteSchool(req: AdminAuthenticatedRequest, res: Response) {
         const { id } = req.query;
 
         if (!id) {
             throw new BadRequestError('School ID is required');
         }
 
-        await SchoolService.deleteSchool(id as string);
+        const Admin = (req as AdminAuthenticatedRequest).admin;
+
+        await SchoolService.deleteSchool(id as string, Admin);
 
         res.status(200).json({
             status: 'success',
