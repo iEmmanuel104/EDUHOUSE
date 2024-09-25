@@ -13,3 +13,7 @@ export default class HelperUtils {
         return randomString;
     };
 }
+
+export function formatDateISO(date: { toISOString: () => string; }) {
+    return date.toISOString().split('.')[0] + 'Z';
+}
