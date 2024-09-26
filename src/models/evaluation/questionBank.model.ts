@@ -1,5 +1,6 @@
 import {
     Table, Column, Model, DataType, IsUUID, PrimaryKey, Default, Validate, BelongsToMany,
+    HasMany,
 } from 'sequelize-typescript';
 import Assessment, { IAssessment } from './assessment.model';
 import AssessmentQuestion from './questions.model';
@@ -42,6 +43,9 @@ export default class QuestionBank extends Model<QuestionBank | IQuestionBank> {
 
     @BelongsToMany(() => Assessment, () => AssessmentQuestion)
         assessments: Assessment[];
+
+    @HasMany(() => AssessmentQuestion)
+        assessmentQuestions: AssessmentQuestion[];
 }
 
 
@@ -52,5 +56,6 @@ export interface IQuestionBank {
     answer: string;
     categories: string[];
     assessments?: IAssessment[];
+    assessmentQuestions?: AssessmentQuestion[];
 }
 
