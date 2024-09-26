@@ -2,6 +2,7 @@
 import {
     Table, Column, Model, DataType, BelongsTo, ForeignKey,
     IsUUID, PrimaryKey, Default, BelongsToMany, Scopes,
+    HasMany,
 } from 'sequelize-typescript';
 import School from '../school.model';
 import User, { IUser } from '../user.model';
@@ -116,6 +117,9 @@ export default class Assessment extends Model<Assessment | IAssessment> {
 
     @BelongsToMany(() => QuestionBank, () => AssessmentQuestion)
         questions: QuestionBank[];
+
+    @HasMany(() => AssessmentTaker)
+        assessmentTakers: AssessmentTaker[];
 }
 
 export interface IAssessment {
@@ -130,4 +134,5 @@ export interface IAssessment {
     grading: GradingSettings;
     assignedUsers?: IUser[];
     questions?: IQuestionBank[];
+    assessmentTakers?: AssessmentTaker[];
 }
