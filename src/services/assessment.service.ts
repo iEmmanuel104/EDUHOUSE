@@ -1,4 +1,4 @@
-import { Transaction, Op, FindAndCountOptions } from 'sequelize';
+import { Transaction, Op, FindAndCountOptions, IncludeOptions } from 'sequelize';
 import Assessment, { AssessmentTargetAudience, IAssessment } from '../models/evaluation/assessment.model';
 import AssessmentTaker, { IAssessmentTaker, AssessmentTakerStatus } from '../models/evaluation/takers.model';
 import { BadRequestError, NotFoundError, UnauthorizedError } from '../utils/customErrors';
@@ -449,21 +449,17 @@ export default class AssessmentService {
             questionWhere.categories = { [Op.overlap]: categories };
         }
 
-        const queryOptions: FindAndCountOptions<AssessmentQuestion> = {
-            where,
-            include: [
-                {
-                    model: QuestionBank,
-                    as: 'questions',
-                    attributes: questionAttributes,
-                    where: questionWhere,
-                },
-            ],
-            order: [['order', 'ASC']],
-        };
+        const includes: IncludeOptions[] = [
+            {
+                model: QuestionBank,
+                attributes: questionAttributes,
+                where: questionWhere,
+                required: true,
+            },
+        ];
 
         if (teacherId) {
-            queryOptions.include?.push({
+            includes.push({
                 model: Assessment,
                 include: [{
                     model: AssessmentTaker,
@@ -474,6 +470,12 @@ export default class AssessmentService {
                 required: true,
             });
         }
+
+        const queryOptions: FindAndCountOptions<AssessmentQuestion> = {
+            where,
+            include: includes,
+            order: [['order', 'ASC']],
+        };
 
         if (page && size && page > 0 && size > 0) {
             const { limit, offset } = Pagination.getPagination({ page, size } as IPaging);
@@ -487,7 +489,10 @@ export default class AssessmentService {
             throw new UnauthorizedError('You are not assigned to this assessment');
         }
 
-        const questions = rows.map(aq => aq.QuestionBank?.toJSON()).filter(Boolean) as Partial<QuestionBank>[];
+        const questions = rows.map(aq => {
+            const questionBank = aq.QuestionBank;
+            return questionBank ? questionBank.toJSON() : null;
+        }).filter(Boolean) as Partial<QuestionBank>[];
 
         if (page && size && questions.length > 0) {
             const totalPages = Pagination.estimateTotalPage({ count, limit: size } as IPaging);
