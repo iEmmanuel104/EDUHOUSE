@@ -452,6 +452,7 @@ export default class AssessmentService {
         const includes: IncludeOptions[] = [
             {
                 model: QuestionBank,
+                as: 'question',
                 attributes: questionAttributes,
                 where: questionWhere,
                 required: true,
@@ -461,9 +462,10 @@ export default class AssessmentService {
         if (teacherId) {
             includes.push({
                 model: Assessment,
+                as: 'assessment',
                 include: [{
                     model: AssessmentTaker,
-                    as: 'assignedUsers',
+                    as: 'assessmentTakers',
                     where: { teacherId },
                     required: true,
                 }],
@@ -489,10 +491,7 @@ export default class AssessmentService {
             throw new UnauthorizedError('You are not assigned to this assessment');
         }
 
-        const questions = rows.map(aq => {
-            const questionBank = aq.QuestionBank;
-            return questionBank ? questionBank.toJSON() : null;
-        }).filter(Boolean) as Partial<QuestionBank>[];
+        const questions = rows.map(aq => aq.question).filter((q): q is QuestionBank => q !== undefined);
 
         if (page && size && questions.length > 0) {
             const totalPages = Pagination.estimateTotalPage({ count, limit: size } as IPaging);
