@@ -9,6 +9,10 @@ export default class AssessmentController {
     static async createAssessment(req: AdminAuthenticatedRequest, res: Response) {
         const assessmentData = req.body;
 
+        if (!assessmentData.questions || assessmentData.questions.length === 0) {
+            throw new BadRequestError('Assessment must include questions');
+        }
+
         const Admin = (req as AdminAuthenticatedRequest).admin;
 
         const newAssessment = await AssessmentService.addAssessment(assessmentData, Admin);
