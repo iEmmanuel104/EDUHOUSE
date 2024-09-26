@@ -9,6 +9,7 @@ import SchoolService from './school.service';
 import SchoolTeacher from '../models/schoolTeacher.model';
 import User from '../models/user.model';
 import QuestionBank from '../models/evaluation/questionBank.model';
+import AssessmentQuestion, { IAssessmentQuestion } from '../models/evaluation/questions.model';
 
 export interface IViewAssessmentsQuery {
     page?: number;
@@ -39,6 +40,18 @@ export default class AssessmentService {
                 passMark: assessmentData.grading?.passMark ?? 50,
             },
         });
+
+        if (assessmentData.questions && assessmentData.questions.length > 0) {
+            const assessmentQuestions = assessmentData.questions.map((question, index) => ({
+                assessmentId: assessment.id,
+                questionId: question.id,
+                order: index + 1,
+                isCustom: false, // Assuming all questions are from QuestionBank
+            }));
+
+            await AssessmentQuestion.bulkCreate(assessmentQuestions as IAssessmentQuestion[]);
+        }
+
         // Automatically assign teachers based on target audience
         if (assessmentData.targetAudience !== AssessmentTargetAudience.SPECIFIC) {
             await this.assignTeachersToAssessment(assessment);
@@ -110,7 +123,14 @@ export default class AssessmentService {
     }
 
     static async viewSingleAssessment(id: string): Promise<Assessment> {
-        const assessment: Assessment | null = await Assessment.findByPk(id);
+        const assessment: Assessment | null = await Assessment.findByPk(id, {
+            include: [
+                {
+                    model: QuestionBank,
+                    through: { attributes: ['order', 'isCustom'] },
+                },
+            ],
+        });
 
         if (!assessment) {
             throw new NotFoundError('Assessment not found');
