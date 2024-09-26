@@ -3,6 +3,7 @@ import AssessmentService, { IViewAssessmentsQuery, IViewAssessmentTakersQuery } 
 import { AdminAuthenticatedRequest, AuthenticatedRequest } from '../middlewares/authMiddleware';
 import { AssessmentTakerStatus } from '../models/evaluation/takers.model';
 import { BadRequestError } from '../utils/customErrors';
+import { SchoolAdminPermissions } from '../models/schoolAdmin.model';
 
 export default class AssessmentController {
     
@@ -13,9 +14,9 @@ export default class AssessmentController {
             throw new BadRequestError('Assessment must include questions');
         }
 
-        const Admin = (req as AdminAuthenticatedRequest).admin;
+        const Admin = req.admin;
 
-        const newAssessment = await AssessmentService.addAssessment(assessmentData, Admin);
+        const newAssessment = await AssessmentService.addAssessment(assessmentData, Admin, SchoolAdminPermissions.CREATE_ASSESSMENT);
 
         res.status(201).json({
             status: 'success',
@@ -60,9 +61,9 @@ export default class AssessmentController {
         const { id } = req.params;
         const updateData = req.body;
 
-        const Admin = (req as AdminAuthenticatedRequest).admin;
+        const Admin = req.admin;
 
-        const updatedAssessment = await AssessmentService.updateAssessment(id, updateData, Admin);
+        const updatedAssessment = await AssessmentService.updateAssessment(id, updateData, Admin, SchoolAdminPermissions.UPDATE_ASSESSMENT);
 
         res.status(200).json({
             status: 'success',
@@ -76,9 +77,9 @@ export default class AssessmentController {
     static async deleteAssessment(req: AdminAuthenticatedRequest, res: Response) {
         const { id } = req.params;
 
-        const Admin = (req as AdminAuthenticatedRequest).admin;
+        const Admin = req.admin;
 
-        await AssessmentService.deleteAssessment(id, Admin);
+        await AssessmentService.deleteAssessment(id, Admin, SchoolAdminPermissions.DELETE_ASSESSMENT);
 
         res.status(200).json({
             status: 'success',
@@ -92,9 +93,9 @@ export default class AssessmentController {
     static async assignAssessmentToUser(req: AdminAuthenticatedRequest, res: Response) {
         const takerData = req.body;
 
-        const Admin = (req as AdminAuthenticatedRequest).admin;
+        const Admin = req.admin;
 
-        const newTaker = await AssessmentService.addAssessmentTaker(takerData, Admin);
+        const newTaker = await AssessmentService.addAssessmentTaker(takerData, Admin, SchoolAdminPermissions.ADD_ASSESSMENT_TAKER);
 
         res.status(201).json({
             status: 'success',
@@ -153,9 +154,9 @@ export default class AssessmentController {
     static async deleteAssessmentTaker(req: AdminAuthenticatedRequest, res: Response) {
         const { id } = req.params;
 
-        const Admin = (req as AdminAuthenticatedRequest).admin;
+        const Admin = req.admin;
 
-        await AssessmentService.deleteAssessmentTaker(id, Admin);
+        await AssessmentService.deleteAssessmentTaker(id, Admin, SchoolAdminPermissions.REMOVE_ASSESSMENT_TAKER);
 
         res.status(200).json({
             status: 'success',
