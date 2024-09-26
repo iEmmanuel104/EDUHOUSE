@@ -1,9 +1,11 @@
 import { Request, Response } from 'express';
-import AssessmentService, { IViewAssessmentsQuery, IViewAssessmentTakersQuery } from '../services/assessment.service';
+import AssessmentService, { IViewAssessmentsQuery, IViewAssessmentTakersQuery, IViewQuestionsQuery } from '../services/assessment.service';
 import { AdminAuthenticatedRequest, AuthenticatedRequest } from '../middlewares/authMiddleware';
 import { AssessmentTakerStatus } from '../models/evaluation/takers.model';
 import { BadRequestError } from '../utils/customErrors';
 import { SchoolAdminPermissions } from '../models/schoolAdmin.model';
+import { Database } from '../models';
+import { Transaction } from 'sequelize';
 
 export default class AssessmentController {
     
@@ -30,7 +32,10 @@ export default class AssessmentController {
     static async getAssessments(req: Request, res: Response) {
         const queryData: IViewAssessmentsQuery = req.query;
 
-        const { assessments, count, totalPages } = await AssessmentService.viewAssessments(queryData);
+        const admin = (req as AdminAuthenticatedRequest).admin;
+        const user = (req as AuthenticatedRequest).user;
+
+        const { assessments, count, totalPages } = await AssessmentService.viewAssessments(queryData, admin || user);
 
         res.status(200).json({
             status: 'success',
@@ -213,6 +218,73 @@ export default class AssessmentController {
             message: 'Assessment submitted successfully',
             data: {
                 taker: updatedTaker,
+            },
+        });
+    }
+
+    // assessment questions
+
+    static async addOrUpdateAssessmentQuestion(req: AdminAuthenticatedRequest, res: Response) {
+        const { assessmentId } = req.params;
+        const questionData = req.body;
+
+        await Database.transaction(async (transaction: Transaction) => {
+            const { question, created } = await AssessmentService.addOrUpdateAssessmentQuestion(
+                assessmentId,
+                questionData,
+                req.admin,
+                SchoolAdminPermissions.UPDATE_ASSESSMENT,
+                transaction
+            );
+
+            res.status(created ? 201 : 200).json({
+                status: 'success',
+                message: created ? 'Question added to assessment successfully' : 'Assessment question updated successfully',
+                data: {
+                    question,
+                },
+            });
+        });
+    }
+
+    static async removeQuestionFromAssessment(req: AdminAuthenticatedRequest, res: Response) {
+        const { assessmentId, questionId } = req.params;
+        await Database.transaction(async (transaction: Transaction) => {
+            await AssessmentService.removeQuestionFromAssessment(
+                assessmentId,
+                questionId,
+                req.admin,
+                SchoolAdminPermissions.UPDATE_ASSESSMENT,
+                transaction
+            );
+
+            res.status(200).json({
+                status: 'success',
+                message: 'Question removed from assessment successfully',
+                data: null,
+            });
+        });
+    }
+
+    static async getAssessmentQuestions(req: AuthenticatedRequest, res: Response) {
+        const { assessmentId } = req.params;
+        const queryData: IViewQuestionsQuery = req.query;
+
+        const user = req.user;
+
+        const { questions, count, totalPages } = await AssessmentService.viewAssessmentQuestions(
+            assessmentId,
+            queryData,
+            user.id,
+        );
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Assessment questions retrieved successfully',
+            data: {
+                questions,
+                count,
+                totalPages,
             },
         });
     }
