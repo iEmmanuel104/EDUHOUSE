@@ -1,21 +1,23 @@
 import { Transaction, Op, FindAndCountOptions } from 'sequelize';
 import Assessment, { AssessmentTargetAudience, IAssessment } from '../models/evaluation/assessment.model';
 import AssessmentTaker, { IAssessmentTaker, AssessmentTakerStatus } from '../models/evaluation/takers.model';
-import { BadRequestError, NotFoundError } from '../utils/customErrors';
+import { BadRequestError, NotFoundError, UnauthorizedError } from '../utils/customErrors';
 import Pagination, { IPaging } from '../utils/pagination';
 import Admin from '../models/admin.model';
-import { SchoolAdminPermissions } from '../models/schoolAdmin.model';
+import SchoolAdmin, { SchoolAdminPermissions } from '../models/schoolAdmin.model';
 import SchoolService from './school.service';
 import SchoolTeacher from '../models/schoolTeacher.model';
 import User from '../models/user.model';
-import QuestionBank from '../models/evaluation/questionBank.model';
+import QuestionBank, { IQuestionBank } from '../models/evaluation/questionBank.model';
 import AssessmentQuestion, { IAssessmentQuestion } from '../models/evaluation/questions.model';
+import moment from 'moment';
 
 export interface IViewAssessmentsQuery {
     page?: number;
     size?: number;
     q?: string;
     schoolId?: string;
+    teacherId?: string;
     targetAudience?: AssessmentTargetAudience;
 }
 
@@ -25,6 +27,13 @@ export interface IViewAssessmentTakersQuery {
     assessmentId?: string;
     teacherId?: string;
     status?: AssessmentTakerStatus;
+}
+
+export interface IViewQuestionsQuery {
+    page?: number;
+    size?: number;
+    q?: string;
+    categories?: string[];
 }
 
 export default class AssessmentService {
@@ -82,8 +91,8 @@ export default class AssessmentService {
         await AssessmentTaker.bulkCreate(assessmentTakers);
     }
 
-    static async viewAssessments(queryData?: IViewAssessmentsQuery): Promise<{ assessments: Assessment[], count: number, totalPages?: number }> {
-        const { page, size, q: query, schoolId, targetAudience } = queryData || {};
+    static async viewAssessments(queryData: IViewAssessmentsQuery, user: Admin | User): Promise<{ assessments: Assessment[], count: number, totalPages?: number }> {
+        const { page, size, q: query, schoolId, targetAudience, teacherId } = queryData;
 
         const where: Record<string | symbol, unknown> = {};
 
@@ -102,7 +111,33 @@ export default class AssessmentService {
             where.targetAudience = targetAudience;
         }
 
-        const queryOptions: FindAndCountOptions<Assessment> = { where };
+        const queryOptions: FindAndCountOptions<Assessment> = {
+            where,
+            include: [{
+                model: User,
+                as: 'assignedUsers',
+                attributes: ['id'],
+                through: { attributes: [] },
+            }],
+        };
+
+        if (user instanceof User || (user instanceof Admin && !user.isSuperAdmin)) {
+            queryOptions.include = [{
+                model: User,
+                as: 'assignedUsers',
+                where: { id: user.id },
+                attributes: ['id'],
+                through: { attributes: [] },
+            }];
+        } else if (user instanceof Admin && user.isSuperAdmin && teacherId) {
+            queryOptions.include = [{
+                model: User,
+                as: 'assignedUsers',
+                where: { id: teacherId },
+                attributes: ['id'],
+                through: { attributes: [] },
+            }];
+        }
 
         if (page && size && page > 0 && size > 0) {
             const { limit, offset } = Pagination.getPagination({ page, size } as IPaging);
@@ -120,14 +155,49 @@ export default class AssessmentService {
         }
     }
 
-    static async viewSingleAssessment(id: string): Promise<Assessment> {
+    static async viewSingleAssessment(id: string, admin?: Admin): Promise<Assessment> {
+        const attributes: string[] = [
+            'id', 'name', 'description', 'categories', 'schoolId', 'targetAudience',
+            'startDate', 'duration', 'grading',
+        ];
+
+        let includeQuestions = false;
+
+        if (admin) {
+            if (admin.isSuperAdmin) {
+                includeQuestions = true;
+            } else {
+                const schoolAdmin = await SchoolAdmin.findOne({
+                    where: { adminId: admin.id, schoolId: id },
+                });
+
+                if (!schoolAdmin) {
+                    throw new UnauthorizedError('You do not have permission to view this assessment');
+                }
+
+                const hasViewRestriction = schoolAdmin.restrictions.includes(SchoolAdminPermissions.VIEW_ASSESSMENT);
+                const assessmentStartDate = await Assessment.findByPk(id, { attributes: ['startDate'] });
+
+                if (!assessmentStartDate) {
+                    throw new NotFoundError('Assessment not found');
+                }
+
+                const hasStarted = moment().isAfter(moment(assessmentStartDate.startDate));
+
+                if (hasStarted || !hasViewRestriction) {
+                    includeQuestions = true;
+                }
+            }
+        }
+
         const assessment: Assessment | null = await Assessment.findByPk(id, {
-            include: [
+            attributes,
+            include: includeQuestions ? [
                 {
                     model: QuestionBank,
                     through: { attributes: ['order', 'isCustom'] },
                 },
-            ],
+            ] : [],
         });
 
         if (!assessment) {
@@ -287,4 +357,144 @@ export default class AssessmentService {
         await SchoolService.viewSingleSchool((assessment.schoolId).toString(), user, permission);
         transaction ? await taker.destroy({ transaction }) : await taker.destroy();
     }
+
+    // assessment questions
+    static async addOrUpdateAssessmentQuestion(
+        assessmentId: string,
+        questionData: IQuestionBank & { id?: string },
+        user: Admin,
+        permission: SchoolAdminPermissions,
+        transaction?: Transaction
+    ): Promise<{ question: QuestionBank; created: boolean }> {
+        const assessment = await Assessment.findByPk(assessmentId, { transaction });
+        if (!assessment) {
+            throw new NotFoundError('Assessment not found');
+        }
+
+        await SchoolService.viewSingleSchool(assessment.schoolId.toString(), user, permission);
+
+        let question: QuestionBank;
+        let created: boolean;
+
+        if (questionData.id) {
+            // Update existing question
+            const existingQuestion = await QuestionBank.findByPk(questionData.id, { transaction });
+            if (!existingQuestion) {
+                throw new NotFoundError('Question not found');
+            }
+            await existingQuestion.update(questionData, { transaction });
+            question = existingQuestion;
+            created = false;
+        } else {
+            // Create new question
+            question = await QuestionBank.create(questionData, { transaction });
+            await AssessmentQuestion.create({
+                assessmentId,
+                questionId: question.id,
+                order: (await AssessmentQuestion.count({ where: { assessmentId }, transaction })) + 1,
+                isCustom: false,
+            }, { transaction });
+            created = true;
+        }
+
+        return { question, created };
+    }
+
+    static async removeQuestionFromAssessment(
+        assessmentId: string,
+        questionId: string,
+        user: Admin,
+        permission: SchoolAdminPermissions,
+        transaction?: Transaction
+    ): Promise<void> {
+        const assessment = await Assessment.findByPk(assessmentId, { transaction });
+        if (!assessment) {
+            throw new NotFoundError('Assessment not found');
+        }
+
+        await SchoolService.viewSingleSchool(assessment.schoolId.toString(), user, permission);
+
+        const assessmentQuestion = await AssessmentQuestion.findOne({
+            where: { assessmentId, questionId },
+            transaction,
+        });
+
+        if (!assessmentQuestion) {
+            throw new NotFoundError('Question not found in this assessment');
+        }
+
+        await assessmentQuestion.destroy({ transaction });
+    }
+
+    static async viewAssessmentQuestions(
+        assessmentId: string,
+        queryData: IViewQuestionsQuery,
+        teacherId?: string,
+    ): Promise<{ questions: Partial<QuestionBank>[], count: number, totalPages?: number }> {
+        const { page, size, q: query, categories } = queryData;
+
+        const questionAttributes = ['id', 'question', 'options', 'categories'];
+
+        const where: Record<string | symbol, unknown> = {
+            assessmentId,
+        };
+
+        const questionWhere: Record<string | symbol, unknown> = {};
+
+        if (query) {
+            questionWhere.question = { [Op.iLike]: `%${query}%` };
+        }
+
+        if (categories && categories.length > 0) {
+            questionWhere.categories = { [Op.overlap]: categories };
+        }
+
+        const queryOptions: FindAndCountOptions<AssessmentQuestion> = {
+            where,
+            include: [
+                {
+                    model: QuestionBank,
+                    as: 'questions',
+                    attributes: questionAttributes,
+                    where: questionWhere,
+                },
+            ],
+            order: [['order', 'ASC']],
+        };
+
+        if (teacherId) {
+            queryOptions.include?.push({
+                model: Assessment,
+                include: [{
+                    model: AssessmentTaker,
+                    as: 'assignedUsers',
+                    where: { teacherId },
+                    required: true,
+                }],
+                required: true,
+            });
+        }
+
+        if (page && size && page > 0 && size > 0) {
+            const { limit, offset } = Pagination.getPagination({ page, size } as IPaging);
+            queryOptions.limit = limit || 0;
+            queryOptions.offset = offset || 0;
+        }
+
+        const { rows, count } = await AssessmentQuestion.findAndCountAll(queryOptions);
+
+        if (teacherId && count === 0) {
+            throw new UnauthorizedError('You are not assigned to this assessment');
+        }
+
+        const questions = rows.map(aq => aq.QuestionBank?.toJSON()).filter(Boolean) as Partial<QuestionBank>[];
+
+        if (page && size && questions.length > 0) {
+            const totalPages = Pagination.estimateTotalPage({ count, limit: size } as IPaging);
+            return { questions, count, ...totalPages };
+        } else {
+            return { questions, count };
+        }
+    }
+
 }
