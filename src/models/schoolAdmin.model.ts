@@ -19,6 +19,7 @@ export enum SchoolAdminPermissions {
     UPDATE_TEACHER = 'update_teacher',
     DELETE_TEACHER = 'delete_teacher',
     CREATE_ASSESSMENT = 'create_assessment',
+    VIEW_ASSESSMENT = 'view_assessment',
     UPDATE_ASSESSMENT = 'update_assessment',
     DELETE_ASSESSMENT = 'delete_assessment',
     ADD_ASSESSMENT_TAKER = 'create_assessment_taker',
