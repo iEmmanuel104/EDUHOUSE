@@ -222,8 +222,7 @@ export default class AssessmentService {
         };
     }
 
-
-    // assess,emt taker
+    // assessment taker
     static async addAssessmentTaker(takerData: IAssessmentTaker, user: Admin, permission: SchoolAdminPermissions): Promise<AssessmentTaker> {
         const assessment = await this.viewSingleAssessment(takerData.assessmentId);
         await SchoolService.viewSingleSchool((assessment.schoolId).toString(), user, permission);

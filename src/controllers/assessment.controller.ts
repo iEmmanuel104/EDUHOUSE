@@ -88,7 +88,6 @@ export default class AssessmentController {
         });
     }
 
-
     // assessment taker
     static async assignAssessmentToUser(req: AdminAuthenticatedRequest, res: Response) {
         const takerData = req.body;
