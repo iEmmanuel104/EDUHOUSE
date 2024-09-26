@@ -11,7 +11,7 @@ export interface IViewSchoolsQuery {
     size?: number;
     q?: string;
     isActive?: boolean;
-    userId?: string; // New optional parameter for superadmin filtering
+    teacherId?: string; // New optional parameter for superadmin filtering
 }
 
 export interface IViewSchoolAdminsQuery {
@@ -45,7 +45,7 @@ export default class SchoolService {
         queryData: IViewSchoolsQuery,
         user?: Admin | User
     ): Promise<{ schools: School[], count: number, totalPages?: number }> {
-        const { page, size, q: query, isActive, userId } = queryData;
+        const { page, size, q: query, isActive, teacherId } = queryData;
 
         const where: Record<string | symbol, unknown> = {};
 
@@ -63,24 +63,21 @@ export default class SchoolService {
         const queryOptions: FindAndCountOptions<School> = {
             where,
             attributes: ['id', 'name', 'registrationId', 'schoolCode', 'isActive', 'logo'],
-            include: [{
-                model: User,
-                as: 'teachers',
-                attributes: ['id'],
-                through: { attributes: [] },
-            }],
+            include: [],
         };
 
         // Filter schools based on user type and permissions
         if (user) {
             if (user instanceof Admin) {
-                if (user.isSuperAdmin && userId) {
+                if (user.isSuperAdmin && teacherId) {
+
+                    console.log('user is superadmin and userId is provided');
                     // If superadmin and userId is provided, filter schools by userId
                     queryOptions.include = [{
                         model: User,
                         as: 'teachers',
-                        where: { id: userId },
-                        attributes: ['id'],
+                        where: { id: teacherId },
+                        attributes: ['id', 'firstName', 'lastName'],
                         through: { attributes: [] },
                     }];
                 } else if (!user.isSuperAdmin) {

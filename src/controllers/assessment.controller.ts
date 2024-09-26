@@ -2,8 +2,10 @@ import { Request, Response } from 'express';
 import AssessmentService, { IViewAssessmentsQuery, IViewAssessmentTakersQuery } from '../services/assessment.service';
 import { AdminAuthenticatedRequest, AuthenticatedRequest } from '../middlewares/authMiddleware';
 import { AssessmentTakerStatus } from '../models/evaluation/takers.model';
+import { BadRequestError } from '../utils/customErrors';
 
 export default class AssessmentController {
+    
     static async createAssessment(req: AdminAuthenticatedRequest, res: Response) {
         const assessmentData = req.body;
 
@@ -172,6 +174,22 @@ export default class AssessmentController {
             data: {
                 taker: updatedTaker,
             },
+        });
+    }
+
+    static async gradeAssessment(req: AdminAuthenticatedRequest, res: Response) {
+        const { assessmentId } = req.params;
+
+        if (!assessmentId) {
+            throw new BadRequestError('Assessment ID is required');
+        }
+
+        const gradingResults = await AssessmentService.gradeAssessment(assessmentId);
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Assessment graded successfully',
+            data: gradingResults,
         });
     }
 

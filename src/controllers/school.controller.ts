@@ -36,7 +36,7 @@ export default class SchoolController {
 
         // Add userId to queryData if it's a superadmin request
         if (admin && admin.isSuperAdmin && req.query.teacherId) {
-            queryData.userId = req.query.teacherId as string;
+            queryData.teacherId = req.query.teacherId as string;
         }
 
         const { schools, count, totalPages } = await SchoolService.viewSchools(queryData, admin || user);

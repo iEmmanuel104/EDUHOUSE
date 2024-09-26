@@ -11,7 +11,7 @@ import Admin from '../models/admin.model';
 import SchoolService from './school.service';
 import { SchoolAdminPermissions } from '../models/schoolAdmin.model';
 import Assessment from '../models/evaluation/assessment.model';
-import AssessmentTaker, { AssessmentTakerStatus } from '../models/evaluation/takers.model';
+import { AssessmentTakerStatus } from '../models/evaluation/takers.model';
 export interface IViewUsersQuery {
     page?: number;
     size?: number;
@@ -170,7 +170,7 @@ export default class UserService {
                         Sequelize.literal(`CAST((
                             SELECT COUNT(DISTINCT "AssessmentTaker"."id")
                             FROM "AssessmentTakers" AS "AssessmentTaker"
-                            WHERE "AssessmentTaker"."userId" = "User"."id"
+                            WHERE "AssessmentTaker"."teacherId" = "User"."id"
                         ) AS INTEGER)`),
                         'assessmentTakenCount',
                     ],
@@ -178,7 +178,7 @@ export default class UserService {
                         Sequelize.literal(`CAST((
                             SELECT COUNT(DISTINCT "AssessmentTaker"."id")
                             FROM "AssessmentTakers" AS "AssessmentTaker"
-                            WHERE "AssessmentTaker"."userId" = "User"."id"
+                            WHERE "AssessmentTaker"."teacherId" = "User"."id"
                             AND "AssessmentTaker"."status" = '${AssessmentTakerStatus.PENDING}'
                             AND "AssessmentTaker"."dueDate" > NOW()
                         ) AS INTEGER)`),
@@ -188,7 +188,7 @@ export default class UserService {
                         Sequelize.literal(`CAST((
                             SELECT COUNT(DISTINCT "AssessmentTaker"."id")
                             FROM "AssessmentTakers" AS "AssessmentTaker"
-                            WHERE "AssessmentTaker"."userId" = "User"."id"
+                            WHERE "AssessmentTaker"."teacherId" = "User"."id"
                             AND "AssessmentTaker"."status" = '${AssessmentTakerStatus.ONGOING}'
                         ) AS INTEGER)`),
                         'ongoingAssessmentCount',
@@ -233,13 +233,9 @@ export default class UserService {
                 {
                     model: Assessment,
                     as: 'assessments',
-                    include: [
-                        {
-                            model: AssessmentTaker,
-                            where: { userId: id },
-                            required: false,
-                        },
-                    ],
+                    through: {
+                        attributes: ['status', 'dueDate', 'startedAt', 'completedAt', 'score'],
+                    },
                 },
             ],
             // attributes: {

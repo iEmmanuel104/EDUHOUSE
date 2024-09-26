@@ -8,12 +8,18 @@ import User, { IUser } from '../user.model';
 import AssessmentTaker from './takers.model';
 import AssessmentQuestion from './questions.model';
 import QuestionBank, { IQuestionBank } from './questionBank.model';
+import moment from 'moment-timezone';
 
 export enum AssessmentTargetAudience {
     ALL = 'all',
     TEACHING = 'teaching',
     NON_TEACHING = 'non_teaching',
     SPECIFIC = 'specific',
+}
+
+export interface GradingSettings {
+    isGradable: boolean;
+    passMark: number;
 }
 
 @Scopes(() => ({
@@ -62,6 +68,45 @@ export default class Assessment extends Model<Assessment | IAssessment> {
     })
         targetAudience: AssessmentTargetAudience;
 
+    @Column({
+        type: DataType.DATE,
+        allowNull: false,
+        get() {
+            return moment(this.getDataValue('startDate')).tz('Africa/Lagos').format('YYYY-MM-DDTHH:mm:ssZ');
+        },
+        set(value: Date | string) {
+            this.setDataValue('startDate', moment(value).tz('Africa/Lagos').toDate());
+        },
+    })
+        startDate: Date;
+
+    @Column({
+        type: DataType.INTEGER,
+        allowNull: false,
+        comment: 'Duration in minutes',
+    })
+        duration: number;
+
+    @Column({
+        type: DataType.JSONB,
+        allowNull: false,
+        defaultValue: {
+            isGradable: true,
+            passMark: 50,
+        },
+        validate: {
+            isValidGradingSettings(value: GradingSettings) {
+                if (typeof value.isGradable !== 'boolean') {
+                    throw new Error('isGradable must be a boolean');
+                }
+                if (typeof value.passMark !== 'number' || value.passMark < 0 || value.passMark > 100) {
+                    throw new Error('passMark must be a number between 0 and 100');
+                }
+            },
+        },
+    })
+        grading: GradingSettings;
+
     @BelongsToMany(() => User, {
         through: () => AssessmentTaker,
         foreignKey: 'assessmentId',
@@ -80,6 +125,9 @@ export interface IAssessment {
     categories: string[];
     schoolId: number;
     targetAudience: AssessmentTargetAudience;
+    startDate: Date | string;
+    duration: number;
+    grading: GradingSettings;
     assignedUsers?: IUser[];
     questions?: IQuestionBank[];
 }

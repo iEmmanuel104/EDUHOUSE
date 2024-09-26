@@ -3,7 +3,7 @@ import {
     BelongsTo, IsUUID, Unique, PrimaryKey, Default,
 } from 'sequelize-typescript';
 import User from './user.model'; // Adjust the import path as necessary
-import moment from 'moment';
+import moment from 'moment-timezone';
 
 interface IBlockUnblockEntry {
     [date: string]: string; // Key is the date in YYYY-MM-DD format, value is the reason
@@ -33,11 +33,11 @@ export default class UserSettings extends Model<UserSettings | IUserSettings> {
         type: DataType.DATE,
         get() {
             const rawValue = this.getDataValue('lastLogin');
-            return rawValue ? moment(rawValue).format('YYYY-MM-DDTHH:mm:ssZ') : null;
+            return rawValue ? moment(rawValue).tz('Africa/Lagos').format('YYYY-MM-DDTHH:mm:ssZ') : null;
         },
         set(value: Date | string) {
             if (moment.isMoment(value) || value instanceof Date || typeof value === 'string') {
-                const momentDate = moment(value);
+                const momentDate = moment(value).tz('Africa/Lagos');
                 if (momentDate.isValid()) {
                     this.setDataValue('lastLogin', momentDate.toDate());
                 } else {
@@ -83,7 +83,7 @@ export default class UserSettings extends Model<UserSettings | IUserSettings> {
 
 export interface IUserSettings {
     userId: string;
-    lastLogin?: Date;
+    lastLogin?: Date | string | moment.Moment;
     joinDate: string;
     isBlocked?: boolean;
     isDeactivated?: boolean;

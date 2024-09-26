@@ -1,11 +1,14 @@
 import { Transaction, Op, FindAndCountOptions } from 'sequelize';
 import Assessment, { AssessmentTargetAudience, IAssessment } from '../models/evaluation/assessment.model';
 import AssessmentTaker, { IAssessmentTaker, AssessmentTakerStatus } from '../models/evaluation/takers.model';
-import { NotFoundError } from '../utils/customErrors';
+import { BadRequestError, NotFoundError } from '../utils/customErrors';
 import Pagination, { IPaging } from '../utils/pagination';
 import Admin from '../models/admin.model';
 import { SchoolAdminPermissions } from '../models/schoolAdmin.model';
 import SchoolService from './school.service';
+import SchoolTeacher from '../models/schoolTeacher.model';
+import User from '../models/user.model';
+import QuestionBank from '../models/evaluation/questionBank.model';
 
 export interface IViewAssessmentsQuery {
     page?: number;
@@ -19,7 +22,7 @@ export interface IViewAssessmentTakersQuery {
     page?: number;
     size?: number;
     assessmentId?: string;
-    userId?: string;
+    teacherId?: string;
     status?: AssessmentTakerStatus;
 }
 
@@ -28,8 +31,44 @@ export default class AssessmentService {
         if (user) {
             await SchoolService.viewSingleSchool((assessmentData.schoolId).toString(), user, SchoolAdminPermissions.CREATE_ASSESSMENT);
         }
-        const assessment = await Assessment.create({ ...assessmentData });
+
+        const assessment = await Assessment.create({
+            ...assessmentData,
+            grading: {
+                isGradable: assessmentData.grading?.isGradable ?? true,
+                passMark: assessmentData.grading?.passMark ?? 50,
+            },
+        });
+        // Automatically assign teachers based on target audience
+        if (assessmentData.targetAudience !== AssessmentTargetAudience.SPECIFIC) {
+            await this.assignTeachersToAssessment(assessment);
+        }
+
         return assessment;
+    }
+
+    private static async assignTeachersToAssessment(assessment: Assessment): Promise<void> {
+        const { schoolId, targetAudience } = assessment;
+
+        const teacherQuery: { schoolId: number; isTeachingStaff?: boolean } = { schoolId };
+        if (targetAudience === AssessmentTargetAudience.TEACHING) {
+            teacherQuery.isTeachingStaff = true;
+        } else if (targetAudience === AssessmentTargetAudience.NON_TEACHING) {
+            teacherQuery.isTeachingStaff = false;
+        }
+
+        const schoolTeachers = await SchoolTeacher.findAll({
+            where: teacherQuery,
+            include: [{ model: User, as: 'teacher', attributes: ['id'] }],
+        });
+
+        const assessmentTakers = schoolTeachers.map(schoolTeacher => ({
+            assessmentId: assessment.id,
+            teacherId: schoolTeacher.teacher.id,
+            status: AssessmentTakerStatus.PENDING,
+        }));
+
+        await AssessmentTaker.bulkCreate(assessmentTakers);
     }
 
     static async viewAssessments(queryData?: IViewAssessmentsQuery): Promise<{ assessments: Assessment[], count: number, totalPages?: number }> {
@@ -97,6 +136,78 @@ export default class AssessmentService {
         transaction ? await assessment.destroy({ transaction }) : await assessment.destroy();
     }
 
+    static async gradeAssessment(assessmentId: string): Promise<{ gradedCount: number, totalCount: number }> {
+        const assessment = await Assessment.findByPk(assessmentId, {
+            include: [{ model: QuestionBank, as: 'questions' }],
+        });
+
+        if (!assessment) {
+            throw new NotFoundError('Assessment not found');
+        }
+
+        if (!assessment.grading.isGradable) {
+            throw new BadRequestError('This assessment is not gradable');
+        }
+
+        const assessmentTakers = await AssessmentTaker.findAll({
+            where: {
+                assessmentId,
+                status: AssessmentTakerStatus.COMPLETED,
+                results: null, // Only grade takers that haven't been graded yet
+            },
+        });
+
+        let gradedCount = 0;
+
+        for (const taker of assessmentTakers) {
+            const results = this.calculateResults(taker.answers, assessment.questions, assessment.grading.passMark);
+            await taker.update({
+                results,
+                // Keep the status as COMPLETED
+            });
+            gradedCount++;
+        }
+
+        return {
+            gradedCount,
+            totalCount: assessmentTakers.length,
+        };
+    }
+
+    private static calculateResults(
+        answers: { questionId: string; answer: string }[],
+        questions: QuestionBank[],
+        passMark: number
+    ): IAssessmentTaker['results'] {
+        let correctAnswers = 0;
+        let incorrectAnswers = 0;
+        const totalQuestions = questions.length;
+
+        for (const question of questions) {
+            const userAnswer = answers.find(a => a.questionId === question.id);
+            if (userAnswer) {
+                if (userAnswer.answer === question.answer) {
+                    correctAnswers++;
+                } else {
+                    incorrectAnswers++;
+                }
+            }
+        }
+
+        const unanswered = totalQuestions - (correctAnswers + incorrectAnswers);
+        const score = (correctAnswers / totalQuestions) * 100;
+        const passed = score >= (passMark || 50); // Use the provided passMark or default to 50%
+
+        return {
+            score,
+            totalQuestions,
+            correctAnswers,
+            incorrectAnswers,
+            unanswered,
+            passed,
+        };
+    }
+
 
     // assess,emt taker
     static async addAssessmentTaker(takerData: IAssessmentTaker, user?: Admin ): Promise<AssessmentTaker> {
@@ -109,7 +220,7 @@ export default class AssessmentService {
     }
 
     static async viewAssessmentTakers(queryData?: IViewAssessmentTakersQuery): Promise<{ takers: AssessmentTaker[], count: number, totalPages?: number }> {
-        const { page, size, assessmentId, userId, status } = queryData || {};
+        const { page, size, assessmentId, teacherId, status } = queryData || {};
 
         const where: Record<string | symbol, unknown> = {};
 
@@ -117,8 +228,8 @@ export default class AssessmentService {
             where.assessmentId = assessmentId;
         }
 
-        if (userId) {
-            where.userId = userId;
+        if (teacherId) {
+            where.teacherId = teacherId;
         }
 
         if (status) {
