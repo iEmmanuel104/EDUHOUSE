@@ -28,10 +28,8 @@ export interface IViewAssessmentTakersQuery {
 }
 
 export default class AssessmentService {
-    static async addAssessment(assessmentData: IAssessment, user?: Admin): Promise<Assessment> {
-        if (user) {
-            await SchoolService.viewSingleSchool((assessmentData.schoolId).toString(), user, SchoolAdminPermissions.CREATE_ASSESSMENT);
-        }
+    static async addAssessment(assessmentData: IAssessment, user: Admin, permission: SchoolAdminPermissions): Promise<Assessment> {
+        await SchoolService.viewSingleSchool((assessmentData.schoolId).toString(), user, permission);
 
         const assessment = await Assessment.create({
             ...assessmentData,
@@ -46,7 +44,7 @@ export default class AssessmentService {
                 assessmentId: assessment.id,
                 questionId: question.id,
                 order: index + 1,
-                isCustom: false, // Assuming all questions are from QuestionBank
+                isCustom: false,
             }));
 
             await AssessmentQuestion.bulkCreate(assessmentQuestions as IAssessmentQuestion[]);
@@ -139,20 +137,16 @@ export default class AssessmentService {
         return assessment;
     }
 
-    static async updateAssessment(id: string, dataToUpdate: Partial<IAssessment>, user?: Admin): Promise<Assessment> {
+    static async updateAssessment(id: string, dataToUpdate: Partial<IAssessment>, user: Admin, permission: SchoolAdminPermissions): Promise<Assessment> {
         const assessment = await this.viewSingleAssessment(id);
-        if (user) {
-            await SchoolService.viewSingleSchool((assessment.schoolId).toString(), user, SchoolAdminPermissions.UPDATE_ASSESSMENT);
-        }
+        await SchoolService.viewSingleSchool((assessment.schoolId).toString(), user, permission);
         await assessment.update(dataToUpdate);
         return assessment;
     }
 
-    static async deleteAssessment(id: string, user?: Admin, transaction?: Transaction): Promise<void> {
+    static async deleteAssessment(id: string, user: Admin, permission: SchoolAdminPermissions, transaction?: Transaction): Promise<void> {
         const assessment = await this.viewSingleAssessment(id);
-        if (user) {
-            await SchoolService.viewSingleSchool((assessment.schoolId).toString(), user, SchoolAdminPermissions.DELETE_ASSESSMENT);
-        }
+        await SchoolService.viewSingleSchool((assessment.schoolId).toString(), user, permission);
         transaction ? await assessment.destroy({ transaction }) : await assessment.destroy();
     }
 
@@ -230,11 +224,9 @@ export default class AssessmentService {
 
 
     // assess,emt taker
-    static async addAssessmentTaker(takerData: IAssessmentTaker, user?: Admin ): Promise<AssessmentTaker> {
+    static async addAssessmentTaker(takerData: IAssessmentTaker, user: Admin, permission: SchoolAdminPermissions): Promise<AssessmentTaker> {
         const assessment = await this.viewSingleAssessment(takerData.assessmentId);
-        if (user) {
-            await SchoolService.viewSingleSchool((assessment.schoolId).toString(), user, SchoolAdminPermissions.ADD_ASSESSMENT_TAKER);
-        }
+        await SchoolService.viewSingleSchool((assessment.schoolId).toString(), user, permission);
         const taker = await AssessmentTaker.create({ ...takerData });
         return taker;
     }
@@ -290,12 +282,10 @@ export default class AssessmentService {
         return taker;
     }
 
-    static async deleteAssessmentTaker(id: string, user?: Admin, transaction?: Transaction ): Promise<void> {
+    static async deleteAssessmentTaker(id: string, user: Admin, permission: SchoolAdminPermissions, transaction?: Transaction): Promise<void> {
         const taker = await this.viewSingleAssessmentTaker(id);
         const assessment = await this.viewSingleAssessment(taker.assessmentId);
-        if (user) {
-            await SchoolService.viewSingleSchool((assessment.schoolId).toString(), user, SchoolAdminPermissions.REMOVE_ASSESSMENT_TAKER);
-        }
+        await SchoolService.viewSingleSchool((assessment.schoolId).toString(), user, permission);
         transaction ? await taker.destroy({ transaction }) : await taker.destroy();
     }
 }
