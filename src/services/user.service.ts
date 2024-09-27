@@ -160,7 +160,7 @@ export default class UserService {
                     attributes: ['id', 'name', 'startDate', 'duration', 'description'],
                     through: {
                         // model: AssessmentTaker,
-                        attributes: ['status', 'startedAt', 'completedAt', 'score'],
+                        attributes: ['status', 'startedAt', 'completedAt'],
                     },
                 },
             ],
@@ -233,7 +233,7 @@ export default class UserService {
                     model: Assessment,
                     as: 'assessments',
                     through: {
-                        attributes: ['status', 'startedAt', 'completedAt', 'score'],
+                        attributes: ['status', 'startedAt', 'completedAt', 'results'],
                     },
                 },
             ],
