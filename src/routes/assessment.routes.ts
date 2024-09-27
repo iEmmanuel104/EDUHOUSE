@@ -24,6 +24,11 @@ router
 
     // Assessment taking routes
     .post('/start/:id', basicAuth('access'), AuthenticatedController(AssessmentController.startAssessment))
-    .post('/submit/:id', basicAuth('access'), AuthenticatedController(AssessmentController.submitAssessment));
+    .post('/submit/:id', basicAuth('access'), AuthenticatedController(AssessmentController.submitAssessment))
+
+    // Assessment question routes
+    .post('/:assessmentId/question', adminAuth('admin'), AdminAuthenticatedController(AssessmentController.addOrUpdateAssessmentQuestion))
+    .delete('/:assessmentId/question/:questionId', adminAuth('admin'), AdminAuthenticatedController(AssessmentController.removeQuestionFromAssessment))
+    .get('/:assessmentId/questions', basicAuth('access'), AuthenticatedController(AssessmentController.getAssessmentQuestions));
 
 export default router;
