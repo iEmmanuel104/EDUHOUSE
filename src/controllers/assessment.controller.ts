@@ -49,9 +49,9 @@ export default class AssessmentController {
     }
 
     static async getAssessment(req: Request, res: Response) {
-        const { id } = req.params;
+        const { id } = req.query;
 
-        const assessment = await AssessmentService.viewSingleAssessment(id);
+        const assessment = await AssessmentService.viewSingleAssessment(id as string);
 
         res.status(200).json({
             status: 'success',
@@ -63,12 +63,12 @@ export default class AssessmentController {
     }
 
     static async updateAssessment(req: AdminAuthenticatedRequest, res: Response) {
-        const { id } = req.params;
+        const { id } = req.query;
         const updateData = req.body;
 
         const Admin = req.admin;
 
-        const updatedAssessment = await AssessmentService.updateAssessment(id, updateData, Admin, SchoolAdminPermissions.UPDATE_ASSESSMENT);
+        const updatedAssessment = await AssessmentService.updateAssessment(id as string, updateData, Admin, SchoolAdminPermissions.UPDATE_ASSESSMENT);
 
         res.status(200).json({
             status: 'success',
@@ -80,11 +80,11 @@ export default class AssessmentController {
     }
 
     static async deleteAssessment(req: AdminAuthenticatedRequest, res: Response) {
-        const { id } = req.params;
+        const { id } = req.query;
 
         const Admin = req.admin;
 
-        await AssessmentService.deleteAssessment(id, Admin, SchoolAdminPermissions.DELETE_ASSESSMENT);
+        await AssessmentService.deleteAssessment(id as string, Admin, SchoolAdminPermissions.DELETE_ASSESSMENT);
 
         res.status(200).json({
             status: 'success',
@@ -127,7 +127,7 @@ export default class AssessmentController {
     }
 
     static async getAssessmentTaker(req: Request, res: Response) {
-        const { id } = req.params;
+        const { id } = req.query as { id: string };
 
         const taker = await AssessmentService.viewSingleAssessmentTaker(id);
 
@@ -141,7 +141,7 @@ export default class AssessmentController {
     }
 
     static async updateAssessmentTaker(req: AuthenticatedRequest, res: Response) {
-        const { id } = req.params;
+        const { id } = req.query as { id: string };
         const updateData = req.body;
 
         const updatedTaker = await AssessmentService.updateAssessmentTaker(id, updateData);
@@ -156,7 +156,7 @@ export default class AssessmentController {
     }
 
     static async deleteAssessmentTaker(req: AdminAuthenticatedRequest, res: Response) {
-        const { id } = req.params;
+        const { id } = req.query as { id: string };
 
         const Admin = req.admin;
 
@@ -170,7 +170,7 @@ export default class AssessmentController {
     }
 
     static async startAssessment(req: AuthenticatedRequest, res: Response) {
-        const { id } = req.params;
+        const { id } = req.query as { id: string };
 
         const updatedTaker = await AssessmentService.updateAssessmentTaker(id, {
             status: AssessmentTakerStatus.ONGOING,
@@ -187,13 +187,13 @@ export default class AssessmentController {
     }
 
     static async gradeAssessment(req: AdminAuthenticatedRequest, res: Response) {
-        const { assessmentId } = req.params;
+        const { id } = req.query as { id: string };
 
-        if (!assessmentId) {
+        if (!id) {
             throw new BadRequestError('Assessment ID is required');
         }
 
-        const gradingResults = await AssessmentService.gradeAssessment(assessmentId);
+        const gradingResults = await AssessmentService.gradeAssessment(id);
 
         res.status(200).json({
             status: 'success',
@@ -203,7 +203,7 @@ export default class AssessmentController {
     }
 
     static async submitAssessment(req: AuthenticatedRequest, res: Response) {
-        const { id } = req.params;
+        const { id } = req.query as { id: string };
         const { answers } = req.body;
 
         const updatedTaker = await AssessmentService.updateAssessmentTaker(id, {
@@ -225,12 +225,12 @@ export default class AssessmentController {
     // assessment questions
 
     static async addOrUpdateAssessmentQuestion(req: AdminAuthenticatedRequest, res: Response) {
-        const { assessmentId } = req.params;
+        const { id } = req.query as { id: string };
         const questionData = req.body;
 
         await Database.transaction(async (transaction: Transaction) => {
             const { question, created } = await AssessmentService.addOrUpdateAssessmentQuestion(
-                assessmentId,
+                id,
                 questionData,
                 req.admin,
                 SchoolAdminPermissions.UPDATE_ASSESSMENT,
@@ -248,10 +248,10 @@ export default class AssessmentController {
     }
 
     static async removeQuestionFromAssessment(req: AdminAuthenticatedRequest, res: Response) {
-        const { assessmentId, questionId } = req.params;
+        const { id, questionId } = req.query as { id: string; questionId: string };
         await Database.transaction(async (transaction: Transaction) => {
             await AssessmentService.removeQuestionFromAssessment(
-                assessmentId,
+                id,
                 questionId,
                 req.admin,
                 SchoolAdminPermissions.UPDATE_ASSESSMENT,
@@ -267,13 +267,13 @@ export default class AssessmentController {
     }
 
     static async getAssessmentQuestions(req: AuthenticatedRequest, res: Response) {
-        const { assessmentId } = req.params;
+        const { id } = req.query as { id: string };
         const queryData: IViewQuestionsQuery = req.query;
 
         const user = req.user;
 
         const { questions, count, totalPages } = await AssessmentService.viewAssessmentQuestions(
-            assessmentId,
+            id,
             queryData,
             user.id,
         );
