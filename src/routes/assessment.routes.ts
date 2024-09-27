@@ -8,27 +8,27 @@ router
     // Assessment management routes
     .post('/', adminAuth('admin'), AdminAuthenticatedController(AssessmentController.createAssessment))
     .get('/', optionalAuth, AssessmentController.getAssessments)
-    .get('/:id', optionalAuth, AssessmentController.getAssessment)
-    .patch('/:id', adminAuth('admin'), AdminAuthenticatedController(AssessmentController.updateAssessment))
-    .delete('/:id', adminAuth('admin'), AdminAuthenticatedController(AssessmentController.deleteAssessment))
+    .get('/info', optionalAuth, AssessmentController.getAssessment)
+    .patch('/', adminAuth('admin'), AdminAuthenticatedController(AssessmentController.updateAssessment))
+    .delete('/', adminAuth('admin'), AdminAuthenticatedController(AssessmentController.deleteAssessment))
 
     // Assessment grading route
-    .post('/:assessmentId/grade', adminAuth('admin'), AdminAuthenticatedController(AssessmentController.gradeAssessment))
+    .post('/grade', adminAuth('admin'), AdminAuthenticatedController(AssessmentController.gradeAssessment))
 
     // Assessment taker routes
     .post('/taker', adminAuth('admin'), AdminAuthenticatedController(AssessmentController.assignAssessmentToUser))
     .get('/takers', optionalAuth, AssessmentController.getAssessmentTakers)
-    .get('/taker/:id', optionalAuth, AssessmentController.getAssessmentTaker)
-    .patch('/taker/:id', basicAuth('access'), AuthenticatedController(AssessmentController.updateAssessmentTaker))
-    .delete('/taker/:id', adminAuth('admin'), AdminAuthenticatedController(AssessmentController.deleteAssessmentTaker))
+    .get('/taker/info', optionalAuth, AssessmentController.getAssessmentTaker)
+    .patch('/taker', basicAuth('access'), AuthenticatedController(AssessmentController.updateAssessmentTaker))
+    .delete('/taker', adminAuth('admin'), AdminAuthenticatedController(AssessmentController.deleteAssessmentTaker))
 
     // Assessment taking routes
-    .post('/start/:id', basicAuth('access'), AuthenticatedController(AssessmentController.startAssessment))
-    .post('/submit/:id', basicAuth('access'), AuthenticatedController(AssessmentController.submitAssessment))
+    .post('/start', basicAuth('access'), AuthenticatedController(AssessmentController.startAssessment))
+    .post('/submit', basicAuth('access'), AuthenticatedController(AssessmentController.submitAssessment))
 
     // Assessment question routes
-    .post('/:assessmentId/question', adminAuth('admin'), AdminAuthenticatedController(AssessmentController.addOrUpdateAssessmentQuestion))
-    .delete('/:assessmentId/question/:questionId', adminAuth('admin'), AdminAuthenticatedController(AssessmentController.removeQuestionFromAssessment))
-    .get('/:assessmentId/questions', basicAuth('access'), AuthenticatedController(AssessmentController.getAssessmentQuestions));
+    .post('/question', adminAuth('admin'), AdminAuthenticatedController(AssessmentController.addOrUpdateAssessmentQuestion))
+    .delete('/question', adminAuth('admin'), AdminAuthenticatedController(AssessmentController.removeQuestionFromAssessment))
+    .get('/questions', basicAuth('access'), AuthenticatedController(AssessmentController.getAssessmentQuestions));
 
 export default router;
