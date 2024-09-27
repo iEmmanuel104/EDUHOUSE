@@ -157,10 +157,10 @@ export default class UserService {
                 {
                     model: Assessment,
                     as: 'assessments',
-                    attributes: ['id', 'name', 'description'],
+                    attributes: ['id', 'name', 'startDate', 'duration', 'description'],
                     through: {
                         // model: AssessmentTaker,
-                        attributes: ['status', 'dueDate', 'startedAt', 'completedAt', 'score'],
+                        attributes: ['status', 'startedAt', 'completedAt', 'score'],
                     },
                 },
             ],
@@ -180,7 +180,6 @@ export default class UserService {
                             FROM "AssessmentTakers" AS "AssessmentTaker"
                             WHERE "AssessmentTaker"."teacherId" = "User"."id"
                             AND "AssessmentTaker"."status" = '${AssessmentTakerStatus.PENDING}'
-                            AND "AssessmentTaker"."dueDate" > NOW()
                         ) AS INTEGER)`),
                         'upcomingAssessmentCount',
                     ],
@@ -234,37 +233,36 @@ export default class UserService {
                     model: Assessment,
                     as: 'assessments',
                     through: {
-                        attributes: ['status', 'dueDate', 'startedAt', 'completedAt', 'score'],
+                        attributes: ['status', 'startedAt', 'completedAt', 'score'],
                     },
                 },
             ],
             // attributes: {
             //     include: [
             //         [
-            //             Sequelize.literal(`(
+            //             Sequelize.literal(`CAST((
             //                 SELECT COUNT(DISTINCT "AssessmentTaker"."id")
             //                 FROM "AssessmentTakers" AS "AssessmentTaker"
-            //                 WHERE "AssessmentTaker"."userId" = "User"."id"
-            //             )`),
+            //                 WHERE "AssessmentTaker"."teacherId" = "User"."id"
+            //             ) AS INTEGER)`),
             //             'assessmentTakenCount',
             //         ],
             //         [
-            //             Sequelize.literal(`(
+            //             Sequelize.literal(`CAST((
             //                 SELECT COUNT(DISTINCT "AssessmentTaker"."id")
             //                 FROM "AssessmentTakers" AS "AssessmentTaker"
-            //                 WHERE "AssessmentTaker"."userId" = "User"."id"
+            //                 WHERE "AssessmentTaker"."teacherId" = "User"."id"
             //                 AND "AssessmentTaker"."status" = '${AssessmentTakerStatus.PENDING}'
-            //                 AND "AssessmentTaker"."dueDate" > NOW()
-            //             )`),
+            //             ) AS INTEGER)`),
             //             'upcomingAssessmentCount',
             //         ],
             //         [
-            //             Sequelize.literal(`(
+            //             Sequelize.literal(`CAST((
             //                 SELECT COUNT(DISTINCT "AssessmentTaker"."id")
             //                 FROM "AssessmentTakers" AS "AssessmentTaker"
-            //                 WHERE "AssessmentTaker"."userId" = "User"."id"
+            //                 WHERE "AssessmentTaker"."teacherId" = "User"."id"
             //                 AND "AssessmentTaker"."status" = '${AssessmentTakerStatus.ONGOING}'
-            //             )`),
+            //             ) AS INTEGER)`),
             //             'ongoingAssessmentCount',
             //         ],
             //     ],
